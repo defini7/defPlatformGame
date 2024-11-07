@@ -1,1 +1,4 @@
 /Build/Target/*
+/Build/Scripts/Windows/VsSolution/PlatformGame/x64/Debug
+/Build/Scripts/Windows/VsSolution/PlatformGame/PlatformGame/x64/Debug
+/Build/Scripts/Windows/VsSolution/PlatformGame/.vs/PlatformGame
