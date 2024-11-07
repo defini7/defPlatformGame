@@ -5,8 +5,10 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/../defGameEngine",
-                "C:\\SDK\\glfw\\include",
-                "C:\\SDK\\stb"
+                "${GLFW_PATH}\\include",
+                "${STB_PATH}",
+                "${SOL2_PATH}\\include",
+                "${LUA_PATH}\\include"
             ],
             "defines": [
                 "_DEBUG",

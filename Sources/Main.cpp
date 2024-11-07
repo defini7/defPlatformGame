@@ -20,7 +20,7 @@ int main()
 
 	std::optional<sol::table> optTableWindow = lua["Window"];
 
-	if (!optTableWindow.has_value())
+	if (!optTableWindow)
 	{
 		std::cerr << "[GAME] Can't find 'Window' table\n";
 		return 1;
