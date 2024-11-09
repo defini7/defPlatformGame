@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{ae97dacc-49e2-465a-8f8e-43538afbd3c6}</ProjectGuid>
-    <RootNamespace>PlatformGame</RootNamespace>
+    <ProjectGuid>{b1cc82b0-d8a3-4738-b650-fcbcd8fee570}</ProjectGuid>
+    <RootNamespace>PROJPlatformGame</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -77,12 +77,12 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(GLFW_PATH)\include; $(STB_PATH); $(SOL2_PATH)\include; $(LUA_PATH)\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(GLFW_PATH)\include; $(LUA_PATH)\src; $(STB_PATH)\; $(SOL2_PATH)\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(GLFW_PATH)\x64\lib-vc2022; $(LUA_PATH);</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(LUA_PATH)\x64\Release; $(GLFW_PATH)\x64\lib-vc2022;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -94,14 +94,14 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(GLFW_PATH)\include; $(STB_PATH); $(SOL2_PATH)\include; $(LUA_PATH)\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(GLFW_PATH)\include; $(LUA_PATH)\src; $(STB_PATH)\; $(SOL2_PATH)\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(GLFW_PATH)\x64\lib-vc2022; $(LUA_PATH);</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(LUA_PATH)\x64\Release; $(GLFW_PATH)\x64\lib-vc2022;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -111,12 +111,12 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(GLFW_PATH)\include; $(STB_PATH); $(SOL2_PATH)\include; $(LUA_PATH)\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(GLFW_PATH)\include; $(LUA_PATH)\src; $(STB_PATH)\; $(SOL2_PATH)\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(GLFW_PATH)\x64\lib-vc2022; $(LUA_PATH);</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(LUA_PATH)\x64\Release; $(GLFW_PATH)\x64\lib-vc2022;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -128,38 +128,38 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(GLFW_PATH)\include; $(STB_PATH); $(SOL2_PATH)\include; $(LUA_PATH)\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(GLFW_PATH)\include; $(LUA_PATH)\src; $(STB_PATH)\; $(SOL2_PATH)\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(GLFW_PATH)\x64\lib-vc2022; $(LUA_PATH);</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(LUA_PATH)\x64\Release; $(GLFW_PATH)\x64\lib-vc2022;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\Sources\Assets.cpp" />
-    <ClCompile Include="..\..\..\..\..\Sources\Dynamic.cpp" />
-    <ClCompile Include="..\..\..\..\..\Sources\Game.cpp" />
-    <ClCompile Include="..\..\..\..\..\Sources\Level.cpp" />
-    <ClCompile Include="..\..\..\..\..\Sources\Main.cpp" />
-    <ClCompile Include="..\..\..\..\..\Sources\ScriptsManager.cpp" />
+    <ClCompile Include="Sources\Assets.cpp" />
+    <ClCompile Include="Sources\Dynamic.cpp" />
+    <ClCompile Include="Sources\Game.cpp" />
+    <ClCompile Include="Sources\Level.cpp" />
+    <ClCompile Include="Sources\Main.cpp" />
+    <ClCompile Include="Sources\ScriptsManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\Include\Assets.hpp" />
-    <ClInclude Include="..\..\..\..\..\Include\defGameEngine.hpp" />
-    <ClInclude Include="..\..\..\..\..\Include\Dynamic.hpp" />
-    <ClInclude Include="..\..\..\..\..\Include\Game.hpp" />
-    <ClInclude Include="..\..\..\..\..\Include\Level.hpp" />
-    <ClInclude Include="..\..\..\..\..\Include\ScriptsManager.hpp" />
+    <ClInclude Include="Include\Assets.hpp" />
+    <ClInclude Include="Include\defGameEngine.hpp" />
+    <ClInclude Include="Include\Dynamic.hpp" />
+    <ClInclude Include="Include\Game.hpp" />
+    <ClInclude Include="Include\Level.hpp" />
+    <ClInclude Include="Include\ScriptsManager.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\..\Assets\config.lua" />
+    <None Include="Assets\config.lua" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\..\..\Assets\sky.png" />
-    <Image Include="..\..\..\..\..\Assets\tiles.png" />
+    <Image Include="Assets\sky.png" />
+    <Image Include="Assets\tiles.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

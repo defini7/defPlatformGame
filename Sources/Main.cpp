@@ -10,7 +10,7 @@ int main()
 {
 	Initialise();
 
-	if (!ScriptsManager::Get().LoadScript("../../../../../Assets/config.lua"))
+	if (!ScriptsManager::Get().LoadScript("Assets/config.lua"))
 	{
 		std::cerr << "[GAME] Can't load Assets/config.lua file\n";
 		return 1;

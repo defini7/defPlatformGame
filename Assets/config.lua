@@ -52,8 +52,8 @@ Assets = {
         }
     },
     Sprites = {
-        Tiles = "../../../../../Assets/tiles.png",
-        Background = "../../../../../Assets/sky.png"
+        Tiles = "Assets/tiles.png",
+        Background = "Assets/sky.png"
     },
     Levels = {
         Home = {
