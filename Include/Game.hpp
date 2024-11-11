@@ -5,6 +5,7 @@
 #include "stb/stb_image_write.h"
 #include "../Include/defGameEngine.hpp"
 
+#include "Logger.hpp"
 #include "Assets.hpp"
 #include "Dynamic.hpp"
 #include "Level.hpp"

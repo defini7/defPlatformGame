@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <string>
 
+#include "../Include/Logger.hpp"
 #include "../Include/ScriptsManager.hpp"
 #include "../Include/Level.hpp"
 

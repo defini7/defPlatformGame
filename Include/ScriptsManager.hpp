@@ -5,6 +5,8 @@
 
 #pragma comment(lib, "lua547.lib")
 
+#include "../Include/Logger.hpp"
+
 class ScriptsManager
 {
 public:

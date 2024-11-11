@@ -143,6 +143,7 @@
     <ClCompile Include="Sources\Dynamic.cpp" />
     <ClCompile Include="Sources\Game.cpp" />
     <ClCompile Include="Sources\Level.cpp" />
+    <ClCompile Include="Sources\Logger.cpp" />
     <ClCompile Include="Sources\Main.cpp" />
     <ClCompile Include="Sources\ScriptsManager.cpp" />
   </ItemGroup>
@@ -152,10 +153,13 @@
     <ClInclude Include="Include\Dynamic.hpp" />
     <ClInclude Include="Include\Game.hpp" />
     <ClInclude Include="Include\Level.hpp" />
+    <ClInclude Include="Include\Logger.hpp" />
     <ClInclude Include="Include\ScriptsManager.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include=".gitignore" />
     <None Include="Assets\config.lua" />
+    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\sky.png" />

@@ -12,7 +12,7 @@ int main()
 
 	if (!ScriptsManager::Get().LoadScript("Assets/config.lua"))
 	{
-		std::cerr << "[GAME] Can't load Assets/config.lua file\n";
+		logger::Error("Can't load Assets/config.lua file");
 		return 1;
 	}
 
@@ -22,7 +22,7 @@ int main()
 
 	if (!optTableWindow)
 	{
-		std::cerr << "[GAME] Can't find 'Window' table\n";
+		logger::Error("Can't find 'Window' table\n");
 		return 1;
 	}
 

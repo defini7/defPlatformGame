@@ -160,7 +160,7 @@ bool Game::LoadConfig()
     optTable = lua["Game"].get<decltype(optTable)>();
     if (!optTable)
     {
-        std::cerr << "[GAME] Can't find Game table";
+        logger::Error("Can't find 'Game' table");
         return false;
     }
 
@@ -169,7 +169,7 @@ bool Game::LoadConfig()
     optTable = tblGame["Velocity"].get<decltype(optTable)>();
     if (!optTable)
     {
-        std::cerr << "[GAME] Can't find Game.Velocity table";
+        logger::Error("Can't find 'Game.Velocity' table");
         return false;
     }
 

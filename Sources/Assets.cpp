@@ -30,11 +30,11 @@ bool Assets::LoadConfig()
 {
     sol::state& lua = ScriptsManager::Get().state;
 
-    auto load_table = [](const sol::optional<sol::table>& optTable, const char* name, sol::table& tblTable)
+    auto load_table = [](const sol::optional<sol::table>& optTable, const std::string& name, sol::table& tblTable)
         {
             if (!optTable)
             {
-                std::cerr << "[GAME] Can't load table " << name << std::endl;
+                logger::Error("Can't load table " + name);
                 return false;
             }
 

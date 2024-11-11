@@ -19,7 +19,7 @@ bool ScriptsManager::LoadScript(const std::string& filename)
 	}
 	catch (const sol::error& e)
 	{
-		std::cerr << e.what() << std::endl;
+		logger::Error(e.what());
 		return false;
 	}
 
