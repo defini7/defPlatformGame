@@ -150,6 +150,7 @@
   <ItemGroup>
     <ClInclude Include="Include\Assets.hpp" />
     <ClInclude Include="Include\defGameEngine.hpp" />
+    <ClInclude Include="Include\defGeometry2D.hpp" />
     <ClInclude Include="Include\Dynamic.hpp" />
     <ClInclude Include="Include\Game.hpp" />
     <ClInclude Include="Include\Level.hpp" />

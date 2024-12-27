@@ -6,6 +6,7 @@
 #include "../Include/Logger.hpp"
 #include "../Include/ScriptsManager.hpp"
 #include "../Include/Level.hpp"
+#include "../Include/Game.hpp"
 
 class Assets
 {

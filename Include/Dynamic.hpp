@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Include/defGameEngine.hpp"
 #include "../Include/Level.hpp"
 #include "../Include/Game.hpp"
 
@@ -23,29 +22,27 @@ public:
 
 public:
     Dynamic() = default;
-    Dynamic(const def::vf2d& pos, const def::vf2d& vel);
+    Dynamic(const def::vf2d& pos);
 
+    void Update();
+
+public:
     virtual void UpdateControls();
     virtual void UpdateCollision();
     virtual void ApplyGravity();
 
-    void Update();
-
-    void SwitchFrame(float fPeriod = 0.2f);
+    virtual void SwitchFrame(float fPeriod = 0.2f);
 
 public:
-    static float s_fVelocityEpsilon;
-    static float s_fFriction;
-    static float s_fGroundSpeed;
-    static float s_fAirSpeed;
-    static float s_fJumpSpeed;
-    static float s_fFallSpeed;
+    inline static float s_fVelocityEpsilon = 0.0f;
+    inline static float s_fFriction = 0.0f;
+    inline static float s_fFallSpeed = 0.0f;
 
-    static def::vf2d s_vMinVelocity;
-    static def::vf2d s_vMaxVelocity;
+    inline static def::vf2d s_vMinVelocity;
+    inline static def::vf2d s_vMaxVelocity;
     
 public:
-    def::vf2d vPos;
+    def::rect<float> rModel;
     def::vf2d vVel;
 
     def::vi2d vGraphicsID;
@@ -54,6 +51,7 @@ public:
     int nFrameCounter = 0;
 
     int nState = State::Left;
+    bool bRedundant = false;
 
     static Game* s_pEngine;
 };
@@ -62,23 +60,57 @@ class Dynamic_Creature : public Dynamic
 {
 public:
     Dynamic_Creature() = default;
-    Dynamic_Creature(const def::vf2d& pos, const def::vf2d& vel);
+    Dynamic_Creature(const def::vf2d& pos);
 
 public:
     void UpdateControls() override;
     void UpdateCollision() override;
     void ApplyGravity() override;
 
+    virtual void Die() = 0;
+
 };
+
+class Dynamic_Enemy;
 
 class Dynamic_Player : public Dynamic_Creature
 {
 public:
     Dynamic_Player() = default;
-    Dynamic_Player(const def::vf2d& pos, const def::vf2d& vel);
+    Dynamic_Player(const def::vf2d& pos);
 
 public:
     void UpdateControls() override;
     void UpdateCollision() override;
+    void SwitchFrame(float fPeriod = 0.2f) override;
+
+    void OnEnemyTouch(Dynamic_Enemy* pEnemy, def::side side);
+
+    void Die() override;
+
+public:
+    static float s_fGroundSpeed;
+    static float s_fAirSpeed;
+    static float s_fJumpSpeed;
+
+};
+
+class Dynamic_Enemy : public Dynamic_Creature
+{
+public:
+    Dynamic_Enemy() = default;
+    Dynamic_Enemy(const def::vf2d& pos);
+
+public:
+    void UpdateControls() override;
+    void UpdateCollision() override;
+    void SwitchFrame(float fPeriod = 0.2f) override;
+
+    void Die() override;
+
+public:
+    static float s_fGroundSpeed;
+    static float s_fAirSpeed;
+    static float s_fJumpSpeed;
 
 };

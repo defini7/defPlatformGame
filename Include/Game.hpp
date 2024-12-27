@@ -3,6 +3,7 @@
 #pragma warning(disable : 4996)
 #include "stb/stb_image.h"
 #include "stb/stb_image_write.h"
+#include "../Include/defGeometry2D.hpp"
 #include "../Include/defGameEngine.hpp"
 
 #include "Logger.hpp"
@@ -13,6 +14,7 @@
 
 #include <unordered_map>
 #include <functional>
+#include <vector>
 
 enum class GameState
 {
@@ -41,8 +43,6 @@ protected:
     static bool LoadConfig();
 
 public:
-	static constexpr size_t TILES_COUNT = 4;
-
     GameState nState = GameState::Menu;
     bool bRunning = true;
 

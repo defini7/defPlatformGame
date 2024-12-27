@@ -27,8 +27,11 @@ bool Game::OnUserCreate()
 
     itCurrentLevel = vecLevels.begin();
 
-    vecDynamics.push_back(new Dynamic_Player({ 1.0f, 1.0f }, { 0.0f, 0.0f }));
+    vecDynamics.push_back(new Dynamic_Player({ 1.0f, 1.0f }));
     itPlayer = vecDynamics.begin();
+
+    vecDynamics.push_back(new Dynamic_Enemy({ 12.0f, 1.0f }));
+    vecDynamics.push_back(new Dynamic_Enemy({ 14.0f, 1.0f }));
 
     return true;
 }
@@ -52,7 +55,7 @@ void Game::DrawWorld()
 
     def::vi2d vVisibleTiles = GetScreenSize() / Assets::Get().vTileSize;
 
-    def::vf2d vOffset = ((*itPlayer)->vPos - (def::vf2d)vVisibleTiles * 0.5f)
+    def::vf2d vOffset = ((*itPlayer)->rModel.pos - (def::vf2d)vVisibleTiles * 0.5f)
         .max({ 0.0f, 0.0f })
         .min((*itCurrentLevel)->GetSize() - vVisibleTiles);
 
@@ -75,7 +78,7 @@ void Game::DrawWorld()
     }
 
     for (const auto& pDynamic : vecDynamics)
-        DrawPartialTexture((pDynamic->vPos - vOffset) * Assets::Get().vTileSize, pTiles, Assets::Get().vTileSize * pDynamic->vGraphicsID, Assets::Get().vTileSize);
+        DrawPartialTexture((pDynamic->rModel.pos - vOffset) * Assets::Get().vTileSize, pTiles, Assets::Get().vTileSize * pDynamic->vGraphicsID, Assets::Get().vTileSize);
 }
 
 void Game::DrawInterface()
@@ -105,13 +108,13 @@ void Game::State_Menu()
         [&]() { bRunning = false; }
     };
 
-    if (GetKey(def::Key::UP).pressed)
+    if (GetKey(def::Key::UP).pressed || GetKey(def::Key::W).pressed)
     {
         nMenuCursor--;
         if (nMenuCursor < 0) nMenuCursor = mapOptions.size() - 1;
     }
 
-    if (GetKey(def::Key::DOWN).pressed)
+    if (GetKey(def::Key::DOWN).pressed || GetKey(def::Key::S).pressed)
     {
         nMenuCursor++;
         if (nMenuCursor >= mapOptions.size()) nMenuCursor = 0;
@@ -143,7 +146,12 @@ void Game::State_Game()
         nState = GameState::Menu;
 
     for (auto& pDynamic : vecDynamics)
-        pDynamic->Update();
+    {
+        if (pDynamic)
+            pDynamic->Update();
+    }
+
+    vecDynamics.remove_if([](Dynamic* pDyn) { return pDyn->bRedundant; });
 
     DrawWorld();
     DrawInterface();
@@ -155,31 +163,39 @@ bool Game::LoadConfig()
         return false;
 
     sol::state& lua = ScriptsManager::Get().state;
-    sol::optional<sol::table> optTable;
 
-    optTable = lua["Game"].get<decltype(optTable)>();
-    if (!optTable)
-    {
-        logger::Error("Can't find 'Game' table");
-        return false;
-    }
+    auto load_table = [](const sol::optional<sol::table>& optTable, const std::string& name, sol::table& tblTable)
+        {
+            if (!optTable)
+            {
+                logger::Error("Can't load table " + name);
+                return false;
+            }
 
-    sol::table& tblGame = optTable.value();
+            tblTable = optTable.value();
+            return true;
+        };
 
-    optTable = tblGame["Velocity"].get<decltype(optTable)>();
-    if (!optTable)
-    {
-        logger::Error("Can't find 'Game.Velocity' table");
-        return false;
-    }
+#define INIT_TABLE(var, source, name) sol::table var; if (!load_table(source, name, var)) return false;
 
-    sol::table& tblVelocity = optTable.value();
+    INIT_TABLE(tblGame, lua["Game"], "Game");
+    INIT_TABLE(tblVelocity, tblGame["Velocity"], "Game.Velocity");
+    INIT_TABLE(tblVelocityPlayer, tblVelocity["Player"], "Game.Velocity.Player");
+    INIT_TABLE(tblVelocityEnemy, tblVelocity["Enemy"], "Game.Velocity.Enemy");
+
+    auto load_velocity = []<class T>(sol::table& table)
+        {
+            T::s_fGroundSpeed = table["GroundSpeed"].get_or(15.0f);
+            T::s_fAirSpeed = table["AirSpeed"].get_or(17.5f);
+            T::s_fJumpSpeed = table["JumpSpeed"].get_or(12.0f);
+        };
 
     Dynamic::s_fVelocityEpsilon = tblVelocity["Epsilon"].get_or(1.0f);
     Dynamic::s_fFriction = tblVelocity["Friction"].get_or(4.0f);
-    Dynamic::s_fGroundSpeed = tblVelocity["GroundSpeed"].get_or(15.0f);
-    Dynamic::s_fAirSpeed = tblVelocity["AirSpeed"].get_or(17.5f);
-    Dynamic::s_fJumpSpeed = tblVelocity["JumpSpeed"].get_or(12.0f);
+
+    load_velocity.template operator() <Dynamic_Player>(tblVelocityPlayer);
+    load_velocity.template operator() <Dynamic_Enemy>(tblVelocityEnemy);
+
     Dynamic::s_fFallSpeed = tblVelocity["FallSpeed"].get_or(20.0f);
 
     auto Velocity_GetVector = [&](const char* name, def::vf2d& vector)
@@ -196,4 +212,6 @@ bool Game::LoadConfig()
 
     Velocity_GetVector("Min", Dynamic::s_vMinVelocity);
     Velocity_GetVector("Max", Dynamic::s_vMaxVelocity);
+
+    return true;
 }
