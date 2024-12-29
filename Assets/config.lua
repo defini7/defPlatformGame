@@ -21,26 +21,31 @@ local function MapStringToTiletypes(map, width, height)
 end
 
 -- Won't look good if you change it, will be fixed
-Window = { ScreenWidth=256, ScreenHeight=192,
-			PixelWidth=4, PixelHeight=4 }
+Window = { ScreenWidth=512, ScreenHeight=240,
+			PixelWidth=2, PixelHeight=2 }
 
-local map_home = "................"..
-                 "..........o.o..."..
-                 ".........xxxx..."..
-                 ".....o.........."..
-                 "................"..
-                 "xxxxxxxxxxxxxxxx"..
-                 "################"..
-                 "####..####..####"
+local map_home = "...........o...................."..
+                 "................................"..
+                 "..........o.o..................."..
+                 ".....o...xxxxx.................."..
+                 "...................x......x....."..
+                 "...............x...#......#....."..
+                 "xxxxxxxxxxxxxxx#xxx#xxxxxx#xxxxx"..
+                 "################################"..
+                 "################################"..
+                 "################################"
 
-local map_next = "................"..
-                 "................"..
-                 "......x.x......."..
-                 ".....x#.#x......"..
-                 "....x##.##x..o.."..
-                 "xxxx###x###xxxxx"..
-                 "################"..
-                 "################"
+local map_next = "................................"..
+                 "................................"..
+                 "................................"..
+                 "................................"..
+                 "................................"..
+                 "................................"..
+                 "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"..
+                 "################################"..
+                 "################################"..
+                 "################################"
+
 
 Assets = {
 
@@ -62,14 +67,14 @@ Assets = {
 
     Levels = {
 
-        Home = {
-            Data = MapStringToTiletypes(map_home, 16, 8),
-            Size = { 16, 8 }
+        [1] = {
+            Data = MapStringToTiletypes(map_home, 32, 10),
+            Size = { 32, 10 }
         },
 
-        Next = {
-            Data = MapStringToTiletypes(map_next, 16, 8),
-            Size = { 16, 8 }
+        [2] = {
+            Data = MapStringToTiletypes(map_next, 32, 10),
+            Size = { 32, 10 }
         }
     }
 }
@@ -96,3 +101,17 @@ Game = {
         }
     }
 }
+
+function Initialise()
+    SpawnEnemy(1, 12, 4)
+    SpawnEnemy(1, 14, 4)
+    SpawnEnemy(1, 17, 4)
+    SpawnEnemy(1, 20, 4)
+    SpawnEnemy(1, 23, 4)
+    SpawnEnemy(2, 20, 4)
+
+    -- we spawn player after spawning enemies,
+    -- because otherwise it will invalidate player's
+    -- iterator in vecDynamics vector
+    SpawnPlayer(1, 1, 4)
+end

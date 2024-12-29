@@ -3,6 +3,12 @@
 #define DGE_APPLICATION
 #include "../Include/Game.hpp"
 
+Game& Game::Get()
+{
+    static Game game;
+    return game;
+}
+
 Game::Game()
 {
     SetTitle("Platform Game");
@@ -15,23 +21,7 @@ Game::~Game()
 
 bool Game::OnUserCreate()
 {
-    Dynamic::s_pEngine = this;
-    Assets& assets = Assets::Get();
-
     LoadConfig();
-
-    vecLevels =
-    {
-        assets.GetLevel("Home"), assets.GetLevel("Next")
-    };
-
-    itCurrentLevel = vecLevels.begin();
-
-    vecDynamics.push_back(new Dynamic_Player({ 1.0f, 1.0f }));
-    itPlayer = vecDynamics.begin();
-
-    vecDynamics.push_back(new Dynamic_Enemy({ 12.0f, 1.0f }));
-    vecDynamics.push_back(new Dynamic_Enemy({ 14.0f, 1.0f }));
 
     return true;
 }
@@ -55,7 +45,7 @@ void Game::DrawWorld()
 
     def::vi2d vVisibleTiles = GetScreenSize() / Assets::Get().vTileSize;
 
-    def::vf2d vOffset = ((*itPlayer)->rModel.pos - (def::vf2d)vVisibleTiles * 0.5f)
+    def::vf2d vOffset = (pPlayer->rModel.pos - (def::vf2d)vVisibleTiles * 0.5f)
         .max({ 0.0f, 0.0f })
         .min((*itCurrentLevel)->GetSize() - vVisibleTiles);
 
@@ -65,7 +55,6 @@ void Game::DrawWorld()
 
     def::vi2d vTile;
     for (vTile.y = -1; vTile.y <= vVisibleTiles.y; vTile.y++)
-    {
         for (vTile.x = -1; vTile.x <= vVisibleTiles.x; vTile.x++)
         {
             TileType tile = (*itCurrentLevel)->GetTile(vTile + (def::vi2d)vOffset);
@@ -75,10 +64,9 @@ void Game::DrawWorld()
             if (tile != TileType::Empty)
                 DrawPartialTexture(p, pTiles, assets.mapSpriteFileOffsets[tile], Assets::Get().vTileSize);
         }
-    }
 
-    for (const auto& pDynamic : vecDynamics)
-        DrawPartialTexture((pDynamic->rModel.pos - vOffset) * Assets::Get().vTileSize, pTiles, Assets::Get().vTileSize * pDynamic->vGraphicsID, Assets::Get().vTileSize);
+    for (const auto& dyn : (*itCurrentLevel)->listDynamics)
+        DrawPartialTexture((dyn.pDynamic->rModel.pos - vOffset) * Assets::Get().vTileSize, pTiles, Assets::Get().vTileSize * dyn.pDynamic->vGraphicsID, Assets::Get().vTileSize);
 }
 
 void Game::DrawInterface()
@@ -145,13 +133,15 @@ void Game::State_Game()
     if (GetKey(def::Key::ESCAPE).pressed)
         nState = GameState::Menu;
 
-    for (auto& pDynamic : vecDynamics)
+    auto& listDynamics = (*itCurrentLevel)->listDynamics;
+
+    for (auto& dyn : listDynamics)
     {
-        if (pDynamic)
-            pDynamic->Update();
+        if (dyn.pDynamic)
+            dyn.pDynamic->Update();
     }
 
-    vecDynamics.remove_if([](Dynamic* pDyn) { return pDyn->bRedundant; });
+    listDynamics.remove_if([](const Level::DynamicUnit& du) { return du.bRedundant; });
 
     DrawWorld();
     DrawInterface();
@@ -214,4 +204,14 @@ bool Game::LoadConfig()
     Velocity_GetVector("Max", Dynamic::s_vMaxVelocity);
 
     return true;
+}
+
+void Game::AddDynamic_back(size_t nLevel, Dynamic* pDynamic)
+{
+    vecLevels[nLevel]->listDynamics.push_back({ false, pDynamic });
+}
+
+void Game::AddDynamic_front(size_t nLevel, Dynamic* pDynamic)
+{
+    vecLevels[nLevel]->listDynamics.push_front({ false, pDynamic });
 }

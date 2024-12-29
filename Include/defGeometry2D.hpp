@@ -235,10 +235,11 @@ namespace def
 
 	enum side : uint8_t
 	{
-		LEFT,
-		TOP,
-		RIGHT,
-		BOTTOM
+		SIDE_LEFT,
+		SIDE_TOP,
+		SIDE_RIGHT,
+		SIDE_BOTTOM,
+		SIDE_NONE
 	};
 
 	template <class T>
@@ -833,10 +834,10 @@ namespace def
 	{
 		switch (i)
 		{
-		case side::LEFT: return left();
-		case side::TOP: return top();
-		case side::RIGHT: return right();
-		case side::BOTTOM: return bottom();
+		case SIDE_LEFT: return left();
+		case SIDE_TOP: return top();
+		case SIDE_RIGHT: return right();
+		case SIDE_BOTTOM: return bottom();
 		}
 
 		return {};

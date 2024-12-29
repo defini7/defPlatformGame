@@ -11,19 +11,14 @@ void Assets::LoadSprite(const std::string& name, def::Graphic* sprite)
     m_mapSprites[name] = sprite;
 }
 
-void Assets::LoadLevel(const std::string& name, Level* level)
-{
-    m_mapLevels[name] = level;
-}
-
 def::Graphic* Assets::GetSprite(const std::string& name)
 {
     return m_mapSprites[name];
 }
 
-Level* Assets::GetLevel(const std::string& name)
+std::unordered_map<std::string, def::Graphic*>& Assets::GetSprites()
 {
-    return m_mapLevels[name];
+    return m_mapSprites;
 }
 
 bool Assets::LoadConfig()
@@ -63,7 +58,11 @@ bool Assets::LoadConfig()
         mapSpriteFileOffsets[tile_type].y = tblCoords[2];
     }
 
-    for (const auto& [name, objInfo] : tblLevels)
+    Game& engine = Game::Get();
+
+    engine.vecLevels.resize(tblLevels.size());
+
+    for (const auto& [idx, objInfo] : tblLevels)
     {
         const sol::table& tblInfo = objInfo.as<sol::table>();
 
@@ -76,11 +75,16 @@ bool Assets::LoadConfig()
         for (int i = 0; i < vSize.x * vSize.y; i++)
             vecTiles.push_back(TileType(tblData[i + 1].get<int>()));
 
-        LoadLevel(name.as<std::string>(), new Level(vecTiles, vSize));
+        engine.vecLevels[idx.as<size_t>() - 1] = new Level(vecTiles, vSize);
     }
+
+    engine.itCurrentLevel = engine.vecLevels.begin();
 
     for (const auto& [name, path] : tblSprites)
         LoadSprite(name.as<std::string>(), new def::Graphic(path.as<std::string>()));
+
+    sol::protected_function initialise = lua["Initialise"];
+    if (initialise.valid()) initialise(); else return false;
 
     return true;
 }

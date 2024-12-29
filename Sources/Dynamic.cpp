@@ -10,9 +10,9 @@ void Dynamic::UpdateControls()
 {
 }
 
-void Dynamic::UpdateCollision()
+void Dynamic::UpdateCollision(std::list<def::side>& vecSides)
 {
-    
+    vecSides.push_back(def::SIDE_NONE);
 }
 
 void Dynamic::ApplyGravity()
@@ -29,7 +29,9 @@ void Dynamic::Update()
     SwitchFrame();
     UpdateControls();
     ApplyGravity();
-    UpdateCollision();
+
+    std::list<def::side> vecSides;
+    UpdateCollision(vecSides);
 }
 
 void Dynamic::SwitchFrame(float fPeriod)
@@ -43,10 +45,8 @@ void Dynamic::SwitchFrame(float fPeriod)
         }
     }
 
-    fFrameTimer += s_pEngine->GetDeltaTime();
+    fFrameTimer += Game::Get().GetDeltaTime();
 }
-
-Game* Dynamic::s_pEngine = nullptr;
 
 
 
@@ -60,11 +60,11 @@ void Dynamic_Creature::UpdateControls()
 {
 }
 
-void Dynamic_Creature::UpdateCollision()
+void Dynamic_Creature::UpdateCollision(std::list<def::side>& vecSides)
 {
-    def::vf2d vNewPos = rModel.pos + vVel * s_pEngine->GetDeltaTime();
+    def::vf2d vNewPos = rModel.pos + vVel * Game::Get().GetDeltaTime();
 
-    Level* pLevel = *s_pEngine->itCurrentLevel;
+    Level* pLevel = *Game::Get().itCurrentLevel;
 
     if (-s_fVelocityEpsilon < vVel.x && vVel.x < s_fVelocityEpsilon && !IS_STATE_SET(nState, State::Jump))
         SET_STATE(nState, State::Idle);
@@ -84,6 +84,7 @@ void Dynamic_Creature::UpdateCollision()
         if (!go(pLevel->GetTile(def::vi2d(vNewPos.x, rModel.pos.y))) || !go(pLevel->GetTile(def::vi2d(vNewPos.x, rModel.pos.y + 0.9f))))
         {
             vNewPos.x = floor(vNewPos.x) + 1.0f;
+            vecSides.push_back(def::SIDE_LEFT);
             vVel.x = 0.0f;
         }
     }
@@ -95,6 +96,7 @@ void Dynamic_Creature::UpdateCollision()
         if (!go(pLevel->GetTile(def::vi2d(vNewPos.x + 1.0f, rModel.pos.y))) || !go(pLevel->GetTile(def::vi2d(vNewPos.x + 1.0f, rModel.pos.y + 0.9f))))
         {
             vNewPos.x = floor(vNewPos.x);
+            vecSides.push_back(def::SIDE_RIGHT);
             vVel.x = 0.0f;
         }
     }
@@ -104,6 +106,7 @@ void Dynamic_Creature::UpdateCollision()
         if (!go(pLevel->GetTile(vNewPos)) || !go(pLevel->GetTile(vNewPos + def::vf2d(0.9f, 0.0f))))
         {
             vNewPos.y = floor(vNewPos.y) + 1.0f;
+            vecSides.push_back(def::SIDE_BOTTOM);
             vVel.y = 0.0f;
         }
     }
@@ -112,6 +115,7 @@ void Dynamic_Creature::UpdateCollision()
         if (!go(pLevel->GetTile(vNewPos + def::vf2d(0.0f, 1.0f))) || !go(pLevel->GetTile(vNewPos + def::vf2d(0.9f, 1.0f))))
         {
             vNewPos.y = floor(vNewPos.y);
+            vecSides.push_back(def::SIDE_TOP);
             vVel.y = 0.0f;
             
             UNSET_STATE(nState, State::Jump);
@@ -123,7 +127,7 @@ void Dynamic_Creature::UpdateCollision()
 
 void Dynamic_Creature::ApplyGravity()
 {
-    float fDeltaTime = s_pEngine->GetDeltaTime();
+    float fDeltaTime = Game::Get().GetDeltaTime();
 
     vVel.y += s_fFallSpeed * fDeltaTime;
     vVel.x += -s_fFriction * vVel.x * fDeltaTime;
@@ -147,19 +151,20 @@ float Dynamic_Player::s_fJumpSpeed = 0.0f;
 
 void Dynamic_Player::UpdateControls()
 {
-    float fDeltaTime = s_pEngine->GetDeltaTime();
+    Game& engine = Game::Get();
+    float fDeltaTime = engine.GetDeltaTime();
 
-    if (s_pEngine->IsFocused())
+    if (engine.IsFocused())
     {
-        if (s_pEngine->GetKey(def::Key::LEFT).held || s_pEngine->GetKey(def::Key::A).held)
+        if (engine.GetKey(def::Key::LEFT).held || engine.GetKey(def::Key::A).held)
             vVel.x += (IS_STATE_SET(nState, State::Jump) ? -s_fAirSpeed : -s_fGroundSpeed) * fDeltaTime;
 
-        if (s_pEngine->GetKey(def::Key::RIGHT).held || s_pEngine->GetKey(def::Key::D).held)
+        if (engine.GetKey(def::Key::RIGHT).held || engine.GetKey(def::Key::D).held)
             vVel.x += (IS_STATE_SET(nState, State::Jump) ? s_fAirSpeed : s_fGroundSpeed) * fDeltaTime;
 
-        if (s_pEngine->GetKey(def::Key::SPACE).pressed ||
-            s_pEngine->GetKey(def::Key::UP).pressed ||
-            s_pEngine->GetKey(def::Key::W).pressed)
+        if (engine.GetKey(def::Key::SPACE).pressed ||
+            engine.GetKey(def::Key::UP).pressed ||
+            engine.GetKey(def::Key::W).pressed)
         {
             if (vVel.y == 0.0f) vVel.y = -s_fJumpSpeed;
             SET_STATE(nState, State::Jump);
@@ -168,12 +173,13 @@ void Dynamic_Player::UpdateControls()
     }
 }
 
-void Dynamic_Player::UpdateCollision()
+void Dynamic_Player::UpdateCollision(std::list<def::side>& vecSides)
 {
-    auto& itLevel = s_pEngine->itCurrentLevel;
+    Game& engine = Game::Get();
+    auto& itLevel = engine.itCurrentLevel;
     Level* pLevel = *itLevel;
 
-    def::vf2d vNewPos = rModel.pos + vVel * s_pEngine->GetDeltaTime();
+    def::vf2d vNewPos = rModel.pos + vVel * engine.GetDeltaTime();
 
     // Check for collision with tiles
 
@@ -190,13 +196,15 @@ void Dynamic_Player::UpdateCollision()
         if (pLevel->GetTile(pos) == TileType::Coin)
         {
             pLevel->SetTile(pos, TileType::Empty);
-            s_pEngine->nScore++;
+            engine.nScore++;
         }
     }
 
-    for (auto it = std::next(s_pEngine->vecDynamics.begin()); it != s_pEngine->vecDynamics.end(); it++)
+    auto& vecDynamics = pLevel->listDynamics;
+
+    for (auto it = std::next(vecDynamics.begin()); it != vecDynamics.end(); it++)
     {
-        Dynamic_Enemy* pEnemy = static_cast<Dynamic_Enemy*>(*it);
+        Dynamic_Enemy* pEnemy = static_cast<Dynamic_Enemy*>(it->pDynamic);
         if (!pEnemy) continue;
 
         std::vector<def::side> vecContactSides;
@@ -205,18 +213,21 @@ void Dynamic_Player::UpdateCollision()
 
         if (!vecContactPoints.empty())
         {
-            for (auto side : vecContactSides)
-                OnEnemyTouch(pEnemy, side);
+            for (auto s : vecContactSides)
+            {
+                if (OnEnemyTouch(pEnemy, s))
+                    it->bRedundant = true;
+            }
         }
     }
 
-    Dynamic_Creature::UpdateCollision();
+    Dynamic_Creature::UpdateCollision(vecSides);
 
     // Switch level (a.k.a. map)
 
     if (rModel.pos.x < 0.0f)
     {
-        if (itLevel == s_pEngine->vecLevels.begin())
+        if (itLevel == engine.vecLevels.begin())
         {
             rModel.pos.x = floor(rModel.pos.x) + 1.0f;
             vVel.x = 0.0f;
@@ -224,12 +235,20 @@ void Dynamic_Player::UpdateCollision()
         else
         {
             rModel.pos.x += float(pLevel->GetSize().x - 1);
+
+            auto& listDynamics = pLevel->listDynamics;
+
+            auto& player = listDynamics.front();
+            player.bRedundant = true;
             --itLevel;
+
+            (*itLevel)->listDynamics.push_front({ false, player.pDynamic });
+            Game::Get().pPlayer = (*itLevel)->listDynamics.begin()->pDynamic;
         }
     }
     else if (rModel.pos.x >= pLevel->GetSize().x - 1.0f)
     {
-        if (itLevel == s_pEngine->vecLevels.end() - 1)
+        if (itLevel == engine.vecLevels.end() - 1)
         {
             rModel.pos.x = floor(rModel.pos.x);
             vVel.x = 0.0f;
@@ -237,7 +256,15 @@ void Dynamic_Player::UpdateCollision()
         else
         {
             rModel.pos.x -= float(pLevel->GetSize().x - 1);
+
+            auto& listDynamics = pLevel->listDynamics;
+
+            auto& player = listDynamics.front();
+            player.bRedundant = true;
             ++itLevel;
+
+            (*itLevel)->listDynamics.push_front({ false, player.pDynamic });
+            Game::Get().pPlayer = (*itLevel)->listDynamics.begin()->pDynamic;
         }
     }
 }
@@ -254,20 +281,20 @@ void Dynamic_Player::SwitchFrame(float fPeriod)
     else if (IS_STATE_SET(nState, State::Left))  vGraphicsID.x = 1;
 }
 
-void Dynamic_Player::OnEnemyTouch(Dynamic_Enemy* pEnemy, def::side side)
+bool Dynamic_Player::OnEnemyTouch(Dynamic_Enemy* pEnemy, def::side side)
 {
-    if (side == def::side::BOTTOM)
+    if (side == def::SIDE_BOTTOM)
     {
         vVel.y = -s_fJumpSpeed * 0.5f;
-        pEnemy->Die();
+        return pEnemy->Die();
     }
-    else
-        Die();
+
+    return Die();
 }
 
-void Dynamic_Player::Die()
+bool Dynamic_Player::Die()
 {
-    
+    return false;
 }
 
 
@@ -284,7 +311,7 @@ float Dynamic_Enemy::s_fJumpSpeed = 0.0f;
 
 void Dynamic_Enemy::UpdateControls()
 {
-    float fDeltaTime = s_pEngine->GetDeltaTime();
+    float fDeltaTime = Game::Get().GetDeltaTime();
 
     if (IS_STATE_SET(nState, State::Left))
         vVel.x += (IS_STATE_SET(nState, State::Jump) ? -s_fAirSpeed : -s_fGroundSpeed) * fDeltaTime;
@@ -293,9 +320,23 @@ void Dynamic_Enemy::UpdateControls()
         vVel.x += (IS_STATE_SET(nState, State::Jump) ? s_fAirSpeed : s_fGroundSpeed) * fDeltaTime;
 }
 
-void Dynamic_Enemy::UpdateCollision()
+void Dynamic_Enemy::UpdateCollision(std::list<def::side>& vecSides)
 {
-    Dynamic_Creature::UpdateCollision();
+    Dynamic_Creature::UpdateCollision(vecSides);
+
+    for (auto side : vecSides)
+    {
+        if (side == def::SIDE_LEFT)
+        {
+            SET_STATE(nState, State::Right);
+            UNSET_STATE(nState, State::Left);
+        }
+        else if (side == def::SIDE_RIGHT)
+        {
+            SET_STATE(nState, State::Left);
+            UNSET_STATE(nState, State::Right);
+        }
+    }
 }
 
 void Dynamic_Enemy::SwitchFrame(float fPeriod)
@@ -306,7 +347,7 @@ void Dynamic_Enemy::SwitchFrame(float fPeriod)
     vGraphicsID.y = 3;
 }
 
-void Dynamic_Enemy::Die()
+bool Dynamic_Enemy::Die()
 {
-    bRedundant = true;
+    return true;
 }

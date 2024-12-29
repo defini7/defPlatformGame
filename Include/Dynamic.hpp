@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../Include/Level.hpp"
-#include "../Include/Game.hpp"
+#include "Game.hpp"
 
 #define IS_STATE_SET(states, state) ((states & (int)state) == (int)state)
 #define SET_STATE(states, state) (states |= (int)state)
@@ -28,7 +27,7 @@ public:
 
 public:
     virtual void UpdateControls();
-    virtual void UpdateCollision();
+    virtual void UpdateCollision(std::list<def::side>& vecSides);
     virtual void ApplyGravity();
 
     virtual void SwitchFrame(float fPeriod = 0.2f);
@@ -51,9 +50,7 @@ public:
     int nFrameCounter = 0;
 
     int nState = State::Left;
-    bool bRedundant = false;
 
-    static Game* s_pEngine;
 };
 
 class Dynamic_Creature : public Dynamic
@@ -64,10 +61,10 @@ public:
 
 public:
     void UpdateControls() override;
-    void UpdateCollision() override;
+    void UpdateCollision(std::list<def::side>& vecSides) override;
     void ApplyGravity() override;
 
-    virtual void Die() = 0;
+    virtual bool Die() = 0;
 
 };
 
@@ -81,12 +78,12 @@ public:
 
 public:
     void UpdateControls() override;
-    void UpdateCollision() override;
+    void UpdateCollision(std::list<def::side>& vecSides) override;
     void SwitchFrame(float fPeriod = 0.2f) override;
 
-    void OnEnemyTouch(Dynamic_Enemy* pEnemy, def::side side);
+    bool OnEnemyTouch(Dynamic_Enemy* pEnemy, def::side side);
 
-    void Die() override;
+    bool Die() override;
 
 public:
     static float s_fGroundSpeed;
@@ -103,10 +100,10 @@ public:
 
 public:
     void UpdateControls() override;
-    void UpdateCollision() override;
+    void UpdateCollision(std::list<def::side>& vecSides) override;
     void SwitchFrame(float fPeriod = 0.2f) override;
 
-    void Die() override;
+    bool Die() override;
 
 public:
     static float s_fGroundSpeed;

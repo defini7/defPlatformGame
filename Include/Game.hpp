@@ -3,8 +3,8 @@
 #pragma warning(disable : 4996)
 #include "stb/stb_image.h"
 #include "stb/stb_image_write.h"
-#include "../Include/defGeometry2D.hpp"
-#include "../Include/defGameEngine.hpp"
+#include "defGeometry2D.hpp"
+#include "defGameEngine.hpp"
 
 #include "Logger.hpp"
 #include "Assets.hpp"
@@ -27,8 +27,15 @@ class Dynamic;
 class Game : public def::GameEngine
 {
 public:
-	Game();
 	virtual ~Game();
+
+    Game(Game const&) = delete;
+    void operator=(Game const&) = delete;
+
+    static Game& Get();
+
+private:
+    Game();
 
 protected:
     bool OnUserCreate() override;
@@ -43,16 +50,19 @@ protected:
     static bool LoadConfig();
 
 public:
+    void AddDynamic_front(size_t nLevel, Dynamic* pDynamic);
+    void AddDynamic_back(size_t nLevel, Dynamic* pDynamic);
+
+public:
     GameState nState = GameState::Menu;
     bool bRunning = true;
-
-    std::list<Dynamic*> vecDynamics;
-    std::list<Dynamic*>::iterator itPlayer;
 
     int nScore = 0;
 	int nMenuCursor = 0;
 
     std::vector<Level*> vecLevels;
     std::vector<Level*>::iterator itCurrentLevel;
+
+    Dynamic* pPlayer;
 
 };

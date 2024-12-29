@@ -3,7 +3,8 @@
 #include <unordered_map>
 #include <string>
 
-#include "../Include/defGeometry2D.hpp"
+#include "defGeometry2D.hpp"
+#include "Dynamic.hpp"
 
 enum class TileType : uint8_t
 {
@@ -12,6 +13,8 @@ enum class TileType : uint8_t
     Grass,
     Dirt
 };
+
+class Dynamic;
 
 class Level
 {
@@ -26,6 +29,15 @@ public:
 
     const def::vi2d& GetSize() const;
     const std::vector<TileType>& GetData() const;
+
+public:
+    struct DynamicUnit
+    {
+        bool bRedundant;
+        Dynamic* pDynamic;
+    };
+
+    std::list<DynamicUnit> listDynamics;
 
 private:
     def::vi2d m_vSize;

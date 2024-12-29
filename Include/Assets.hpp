@@ -3,10 +3,13 @@
 #include <unordered_map>
 #include <string>
 
-#include "../Include/Logger.hpp"
-#include "../Include/ScriptsManager.hpp"
-#include "../Include/Level.hpp"
-#include "../Include/Game.hpp"
+#include "Logger.hpp"
+#include "ScriptsManager.hpp"
+#include "Game.hpp"
+#include "Level.hpp"
+
+enum class TileType : uint8_t;
+class Level;
 
 class Assets
 {
@@ -18,13 +21,11 @@ public:
 
 public:
     void LoadSprite(const std::string& name, def::Graphic* sprite);
-    void LoadLevel(const std::string& name, Level* level);
-
     def::Graphic* GetSprite(const std::string& name);
-    Level* GetLevel(const std::string& name);
+    std::unordered_map<std::string, def::Graphic*>& GetSprites();
 
     bool LoadConfig();
-
+    
     std::unordered_map<TileType, def::vi2d> mapSpriteFileOffsets;
     def::vi2d vTileSize;
 
