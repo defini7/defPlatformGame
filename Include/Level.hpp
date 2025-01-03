@@ -33,7 +33,7 @@ public:
 public:
     struct DynamicUnit
     {
-        bool bRedundant;
+        bool bRedundant = false;
         Dynamic* pDynamic;
     };
 

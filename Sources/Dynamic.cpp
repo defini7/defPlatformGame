@@ -1,9 +1,10 @@
 #define DEF_GEOMETRY2D_IMPL
 #include "../Include/Dynamic.hpp"
 
-Dynamic::Dynamic(const def::vf2d& pos) : rModel(pos, { 1, 1 })
+Dynamic::Dynamic(const def::vf2d& pos)
 {
-    
+    rModel.size = { 1.0f, 1.0f };
+    SetPosition(pos);
 }
 
 void Dynamic::UpdateControls()
@@ -32,6 +33,41 @@ void Dynamic::Update()
 
     std::list<def::side> vecSides;
     UpdateCollision(vecSides);
+}
+
+void Dynamic::SetPosition(const def::vf2d& pos)
+{
+    rModel.pos = pos;
+
+    float ix = 1.0f / Assets::Get().vTileSize.x;
+    float iy = 1.0f / Assets::Get().vTileSize.y;
+
+    // Left side
+    rEdgelessModel[0].start = { pos.x, pos.y + iy };
+    rEdgelessModel[0].end = { pos.x, pos.y + 1.0f - iy };
+
+    // Top side
+    rEdgelessModel[1].start = { pos.x + ix, pos.y };
+    rEdgelessModel[1].end = { pos.x + 1.0f - ix, pos.y };
+
+    // Right side
+    rEdgelessModel[2].start = { pos.x + 1.0f, pos.y + iy };
+    rEdgelessModel[2].end = { pos.x + 1.0f, pos.y + 1.0f - iy };
+
+    // Bottom side
+    rEdgelessModel[3].start = { pos.x + ix, pos.y + 1.0f };
+    rEdgelessModel[3].end = { pos.x + 1.0f - ix, pos.y + 1.0f };
+}
+
+void Dynamic::OffsetPosition(const def::vf2d& offset)
+{
+    rModel.pos += offset;
+
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        rEdgelessModel[i].start += offset;
+        rEdgelessModel[i].end += offset;
+    }
 }
 
 void Dynamic::SwitchFrame(float fPeriod)
@@ -122,7 +158,7 @@ void Dynamic_Creature::UpdateCollision(std::list<def::side>& vecSides)
         }
     }
 
-    rModel.pos = vNewPos;
+    SetPosition(vNewPos);
 }
 
 void Dynamic_Creature::ApplyGravity()
@@ -200,23 +236,40 @@ void Dynamic_Player::UpdateCollision(std::list<def::side>& vecSides)
         }
     }
 
-    auto& vecDynamics = pLevel->listDynamics;
+    auto& listDynamics = pLevel->listDynamics;
 
-    for (auto it = std::next(vecDynamics.begin()); it != vecDynamics.end(); it++)
+    auto CheckCollision = [&](Dynamic_Enemy* pEnemy)
+        {
+            for (uint8_t i = 0; i < 4; i++)
+                for (uint8_t j = 0; j < 4; j++)
+                {
+                    std::vector<def::vf2d> points;
+
+                    if (def::intersects(rEdgelessModel[i], pEnemy->rEdgelessModel[j], points))
+                         return def::side(j);
+                }
+
+            return def::SIDE_NONE;
+        };
+
+    for (auto it = std::next(listDynamics.begin()); it != listDynamics.end(); it++)
     {
         Dynamic_Enemy* pEnemy = static_cast<Dynamic_Enemy*>(it->pDynamic);
-        if (!pEnemy) continue;
+        if (it->bRedundant || !pEnemy) continue;
 
-        std::vector<def::side> vecContactSides;
-        std::vector<def::vf2d> vecContactPoints =
-            def::intersects(rModel, pEnemy->rModel, &vecContactSides);
+        def::side side = CheckCollision(pEnemy);
 
-        if (!vecContactPoints.empty())
+        if (side != def::SIDE_NONE)
         {
-            for (auto s : vecContactSides)
+            if (OnEnemyTouch(pEnemy, side))
             {
-                if (OnEnemyTouch(pEnemy, s))
-                    it->bRedundant = true;
+                // Here we kill an enemy
+                it->bRedundant = true;
+            }
+            else
+            {
+                // and here we kill a player
+                listDynamics.begin()->bRedundant = true;
             }
         }
     }
@@ -229,12 +282,12 @@ void Dynamic_Player::UpdateCollision(std::list<def::side>& vecSides)
     {
         if (itLevel == engine.vecLevels.begin())
         {
-            rModel.pos.x = floor(rModel.pos.x) + 1.0f;
+            SetPosition({ floor(rModel.pos.x) + 1.0f, rModel.pos.y });
             vVel.x = 0.0f;
         }
         else
         {
-            rModel.pos.x += float(pLevel->GetSize().x - 1);
+            OffsetPosition({ float(pLevel->GetSize().x - 1), 0.0f });
 
             auto& listDynamics = pLevel->listDynamics;
 
@@ -250,12 +303,12 @@ void Dynamic_Player::UpdateCollision(std::list<def::side>& vecSides)
     {
         if (itLevel == engine.vecLevels.end() - 1)
         {
-            rModel.pos.x = floor(rModel.pos.x);
+            SetPosition({ floor(rModel.pos.x), rModel.pos.y });
             vVel.x = 0.0f;
         }
         else
         {
-            rModel.pos.x -= float(pLevel->GetSize().x - 1);
+            OffsetPosition({ float(1 - pLevel->GetSize().x), 0.0f });
 
             auto& listDynamics = pLevel->listDynamics;
 
@@ -283,20 +336,14 @@ void Dynamic_Player::SwitchFrame(float fPeriod)
 
 bool Dynamic_Player::OnEnemyTouch(Dynamic_Enemy* pEnemy, def::side side)
 {
-    if (side == def::SIDE_BOTTOM)
+    if (side == def::SIDE_TOP)
     {
         vVel.y = -s_fJumpSpeed * 0.5f;
-        return pEnemy->Die();
+        return true;
     }
-
-    return Die();
-}
-
-bool Dynamic_Player::Die()
-{
+ 
     return false;
 }
-
 
 
 
@@ -345,9 +392,4 @@ void Dynamic_Enemy::SwitchFrame(float fPeriod)
 
     vGraphicsID.x = nFrameCounter;
     vGraphicsID.y = 3;
-}
-
-bool Dynamic_Enemy::Die()
-{
-    return true;
 }

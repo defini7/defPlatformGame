@@ -25,6 +25,9 @@ public:
 
     void Update();
 
+    void SetPosition(const def::vf2d& pos);
+    void OffsetPosition(const def::vf2d& offset);
+
 public:
     virtual void UpdateControls();
     virtual void UpdateCollision(std::list<def::side>& vecSides);
@@ -42,6 +45,7 @@ public:
     
 public:
     def::rect<float> rModel;
+    def::line<float> rEdgelessModel[4];
     def::vf2d vVel;
 
     def::vi2d vGraphicsID;
@@ -64,8 +68,6 @@ public:
     void UpdateCollision(std::list<def::side>& vecSides) override;
     void ApplyGravity() override;
 
-    virtual bool Die() = 0;
-
 };
 
 class Dynamic_Enemy;
@@ -82,8 +84,6 @@ public:
     void SwitchFrame(float fPeriod = 0.2f) override;
 
     bool OnEnemyTouch(Dynamic_Enemy* pEnemy, def::side side);
-
-    bool Die() override;
 
 public:
     static float s_fGroundSpeed;
@@ -102,8 +102,6 @@ public:
     void UpdateControls() override;
     void UpdateCollision(std::list<def::side>& vecSides) override;
     void SwitchFrame(float fPeriod = 0.2f) override;
-
-    bool Die() override;
 
 public:
     static float s_fGroundSpeed;
