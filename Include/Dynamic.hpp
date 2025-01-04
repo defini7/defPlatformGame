@@ -16,12 +16,13 @@ public:
         Idle = 1 << 0,
         Left = 1 << 1,
         Right = 1 << 2,
-        Jump = 1 << 3
+        Jump = 1 << 3,
+        Faster = 1 << 4
     };
 
 public:
     Dynamic() = default;
-    Dynamic(const def::vf2d& pos);
+    Dynamic(const def::vf2d& pos, const def::vf2d& size);
 
     void Update();
 
@@ -55,13 +56,15 @@ public:
 
     int nState = State::Left;
 
+    bool bFriendlyFire = false;
+
 };
 
 class Dynamic_Creature : public Dynamic
 {
 public:
     Dynamic_Creature() = default;
-    Dynamic_Creature(const def::vf2d& pos);
+    Dynamic_Creature(const def::vf2d& pos, const def::vf2d& size);
 
 public:
     void UpdateControls() override;
@@ -96,16 +99,49 @@ class Dynamic_Enemy : public Dynamic_Creature
 {
 public:
     Dynamic_Enemy() = default;
-    Dynamic_Enemy(const def::vf2d& pos);
+    Dynamic_Enemy(const def::vf2d& pos, const def::vf2d& size);
 
 public:
     void UpdateControls() override;
     void UpdateCollision(std::list<def::side>& vecSides) override;
     void SwitchFrame(float fPeriod = 0.2f) override;
 
+    virtual bool OnHit();
+    virtual bool OnSideTouch(def::side nSide);
+
 public:
     static float s_fGroundSpeed;
     static float s_fAirSpeed;
     static float s_fJumpSpeed;
 
+};
+
+class Dynamic_Enemy_Mushroom : public Dynamic_Enemy
+{
+public:
+    Dynamic_Enemy_Mushroom(const def::vf2d& pos);
+
+public:
+    bool OnHit() override;
+    bool OnSideTouch(def::side nSide) override;
+
+    void SwitchFrame(float fPeriod = 0.2f) override;
+};
+
+class Dynamic_Enemy_Turtle : public Dynamic_Enemy
+{
+public:
+    enum class TurtleState
+    {
+        Walk,
+        Shell
+    } nTurtleState = TurtleState::Walk;
+
+    Dynamic_Enemy_Turtle(const def::vf2d& pos);
+
+public:
+    bool OnHit() override;
+    bool OnSideTouch(def::side nSide) override;
+
+    void SwitchFrame(float fPeriod = 0.2f) override;
 };

@@ -103,12 +103,13 @@ Game = {
 }
 
 function Initialise()
-    SpawnEnemy(1, 12, 4)
-    SpawnEnemy(1, 14, 4)
-    SpawnEnemy(1, 17, 4)
-    SpawnEnemy(1, 20, 4)
-    SpawnEnemy(1, 23, 4)
-    SpawnEnemy(2, 20, 4)
+    SpawnTurtle(1, 12, 4)
+    SpawnMushroom(1, 14, 4)
+    SpawnMushroom(1, 17, 4)
+    SpawnMushroom(1, 20, 4)
+    SpawnMushroom(1, 23, 4)
+    SpawnTurtle(2, 10, 3)
+    SpawnMushroom(2, 30, 4)
 
     -- we spawn player after spawning enemies,
     -- because otherwise it will invalidate player's

@@ -66,7 +66,13 @@ void Game::DrawWorld()
         }
 
     for (const auto& dyn : (*itCurrentLevel)->listDynamics)
-        DrawPartialTexture((dyn.pDynamic->rModel.pos - vOffset) * Assets::Get().vTileSize, pTiles, Assets::Get().vTileSize * dyn.pDynamic->vGraphicsID, Assets::Get().vTileSize);
+    {
+        DrawPartialTexture(
+            (dyn.pDynamic->rModel.pos - vOffset) * Assets::Get().vTileSize,
+            pTiles,
+            Assets::Get().vTileSize * dyn.pDynamic->vGraphicsID,
+            dyn.pDynamic->rModel.size * Assets::Get().vTileSize);
+    }
 }
 
 void Game::DrawInterface()

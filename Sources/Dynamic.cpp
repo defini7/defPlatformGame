@@ -1,9 +1,9 @@
 #define DEF_GEOMETRY2D_IMPL
 #include "../Include/Dynamic.hpp"
 
-Dynamic::Dynamic(const def::vf2d& pos)
+Dynamic::Dynamic(const def::vf2d& pos, const def::vf2d& size)
 {
-    rModel.size = { 1.0f, 1.0f };
+    rModel.size = size;
     SetPosition(pos);
 }
 
@@ -44,19 +44,19 @@ void Dynamic::SetPosition(const def::vf2d& pos)
 
     // Left side
     rEdgelessModel[0].start = { pos.x, pos.y + iy };
-    rEdgelessModel[0].end = { pos.x, pos.y + 1.0f - iy };
+    rEdgelessModel[0].end = { pos.x, pos.y + rModel.size.y - iy };
 
     // Top side
     rEdgelessModel[1].start = { pos.x + ix, pos.y };
-    rEdgelessModel[1].end = { pos.x + 1.0f - ix, pos.y };
+    rEdgelessModel[1].end = { pos.x + rModel.size.x - ix, pos.y };
 
     // Right side
-    rEdgelessModel[2].start = { pos.x + 1.0f, pos.y + iy };
-    rEdgelessModel[2].end = { pos.x + 1.0f, pos.y + 1.0f - iy };
+    rEdgelessModel[2].start = { pos.x + rModel.size.x, pos.y + iy };
+    rEdgelessModel[2].end = { pos.x + rModel.size.x, pos.y + rModel.size.y - iy };
 
     // Bottom side
-    rEdgelessModel[3].start = { pos.x + ix, pos.y + 1.0f };
-    rEdgelessModel[3].end = { pos.x + 1.0f - ix, pos.y + 1.0f };
+    rEdgelessModel[3].start = { pos.x + ix, pos.y + rModel.size.y };
+    rEdgelessModel[3].end = { pos.x + rModel.size.x - ix, pos.y + rModel.size.y };
 }
 
 void Dynamic::OffsetPosition(const def::vf2d& offset)
@@ -87,8 +87,8 @@ void Dynamic::SwitchFrame(float fPeriod)
 
 
 
-Dynamic_Creature::Dynamic_Creature(const def::vf2d& pos)
-    : Dynamic(pos)
+Dynamic_Creature::Dynamic_Creature(const def::vf2d& pos, const def::vf2d& size)
+    : Dynamic(pos, size)
 {
 }
 
@@ -117,19 +117,19 @@ void Dynamic_Creature::UpdateCollision(std::list<def::side>& vecSides)
         SET_STATE(nState, State::Left);
         UNSET_STATE(nState, State::Right);
 
-        if (!go(pLevel->GetTile(def::vi2d(vNewPos.x, rModel.pos.y))) || !go(pLevel->GetTile(def::vi2d(vNewPos.x, rModel.pos.y + 0.9f))))
+        if (!go(pLevel->GetTile(def::vi2d(vNewPos.x, rModel.pos.y))) || !go(pLevel->GetTile(def::vi2d(vNewPos.x, rModel.pos.y + rModel.size.y - 0.1f))))
         {
-            vNewPos.x = floor(vNewPos.x) + 1.0f;
+            vNewPos.x = floor(vNewPos.x) + rModel.size.x;
             vecSides.push_back(def::SIDE_LEFT);
             vVel.x = 0.0f;
         }
     }
-    else
+    else if (vVel.x > 0.0f)
     {
         SET_STATE(nState, State::Right);
         UNSET_STATE(nState, State::Left);
 
-        if (!go(pLevel->GetTile(def::vi2d(vNewPos.x + 1.0f, rModel.pos.y))) || !go(pLevel->GetTile(def::vi2d(vNewPos.x + 1.0f, rModel.pos.y + 0.9f))))
+        if (!go(pLevel->GetTile(def::vi2d(vNewPos.x + rModel.size.x, rModel.pos.y))) || !go(pLevel->GetTile(def::vi2d(vNewPos.x + rModel.size.x, rModel.pos.y + rModel.size.y - 0.1f))))
         {
             vNewPos.x = floor(vNewPos.x);
             vecSides.push_back(def::SIDE_RIGHT);
@@ -137,18 +137,18 @@ void Dynamic_Creature::UpdateCollision(std::list<def::side>& vecSides)
         }
     }
 
-    if (vVel.y <= 0.0f)
+    if (vVel.y < 0.0f)
     {
-        if (!go(pLevel->GetTile(vNewPos)) || !go(pLevel->GetTile(vNewPos + def::vf2d(0.9f, 0.0f))))
+        if (!go(pLevel->GetTile(vNewPos)) || !go(pLevel->GetTile(vNewPos + def::vf2d(rModel.size.x - 0.1f, 0.0f))))
         {
-            vNewPos.y = floor(vNewPos.y) + 1.0f;
+            vNewPos.y = floor(vNewPos.y) + rModel.size.y;
             vecSides.push_back(def::SIDE_BOTTOM);
             vVel.y = 0.0f;
         }
     }
-    else
+    else if (vVel.y > 0.0f)
     {
-        if (!go(pLevel->GetTile(vNewPos + def::vf2d(0.0f, 1.0f))) || !go(pLevel->GetTile(vNewPos + def::vf2d(0.9f, 1.0f))))
+        if (!go(pLevel->GetTile(vNewPos + def::vf2d(0.0f, 1.0f))) || !go(pLevel->GetTile(vNewPos + def::vf2d(rModel.size.x - 0.1f, rModel.size.y))))
         {
             vNewPos.y = floor(vNewPos.y);
             vecSides.push_back(def::SIDE_TOP);
@@ -177,7 +177,7 @@ void Dynamic_Creature::ApplyGravity()
 
 
 Dynamic_Player::Dynamic_Player(const def::vf2d& pos)
-    : Dynamic_Creature(pos)
+    : Dynamic_Creature(pos, { 1.0f, 1.0f })
 {
 }
 
@@ -238,14 +238,14 @@ void Dynamic_Player::UpdateCollision(std::list<def::side>& vecSides)
 
     auto& listDynamics = pLevel->listDynamics;
 
-    auto CheckCollision = [&](Dynamic_Enemy* pEnemy)
+    auto CheckCollision = [&](Dynamic_Creature* pCreature1, Dynamic_Creature* pCreature2)
         {
             for (uint8_t i = 0; i < 4; i++)
                 for (uint8_t j = 0; j < 4; j++)
                 {
                     std::vector<def::vf2d> points;
 
-                    if (def::intersects(rEdgelessModel[i], pEnemy->rEdgelessModel[j], points))
+                    if (def::intersects(pCreature1->rEdgelessModel[i], pCreature2->rEdgelessModel[j], points))
                          return def::side(j);
                 }
 
@@ -257,14 +257,17 @@ void Dynamic_Player::UpdateCollision(std::list<def::side>& vecSides)
         Dynamic_Enemy* pEnemy = static_cast<Dynamic_Enemy*>(it->pDynamic);
         if (it->bRedundant || !pEnemy) continue;
 
-        def::side side = CheckCollision(pEnemy);
+        def::side side = CheckCollision(this, pEnemy);
 
         if (side != def::SIDE_NONE)
         {
             if (OnEnemyTouch(pEnemy, side))
             {
-                // Here we kill an enemy
-                it->bRedundant = true;
+                if (pEnemy->OnHit())
+                {
+                    // Here we kill an enemy
+                    it->bRedundant = true;
+                }
             }
             else
             {
@@ -273,6 +276,27 @@ void Dynamic_Player::UpdateCollision(std::list<def::side>& vecSides)
             }
         }
     }
+
+    for (auto it1 = std::next(listDynamics.begin()); it1 != listDynamics.end(); it1++)
+        for (auto it2 = std::next(listDynamics.begin()); it2 != listDynamics.end(); it2++)
+        {
+            if (it1 == it2) continue;
+
+            Dynamic_Enemy* pEnemy1 = static_cast<Dynamic_Enemy*>(it1->pDynamic);
+            Dynamic_Enemy* pEnemy2 = static_cast<Dynamic_Enemy*>(it2->pDynamic);
+
+            if (pEnemy1->bFriendlyFire)
+            {
+                if (CheckCollision(pEnemy1, pEnemy2) != def::SIDE_NONE)
+                    it2->bRedundant = true;
+            }
+
+            if (pEnemy2->bFriendlyFire)
+            {
+                if (CheckCollision(pEnemy1, pEnemy2) != def::SIDE_NONE)
+                    it1->bRedundant = true;
+            }
+        }
 
     Dynamic_Creature::UpdateCollision(vecSides);
 
@@ -342,13 +366,13 @@ bool Dynamic_Player::OnEnemyTouch(Dynamic_Enemy* pEnemy, def::side side)
         return true;
     }
  
-    return false;
+    return pEnemy->OnSideTouch(side);
 }
 
 
 
-Dynamic_Enemy::Dynamic_Enemy(const def::vf2d& pos)
-    : Dynamic_Creature(pos)
+Dynamic_Enemy::Dynamic_Enemy(const def::vf2d& pos, const def::vf2d& size)
+    : Dynamic_Creature(pos, size)
 {
 }
 
@@ -360,11 +384,14 @@ void Dynamic_Enemy::UpdateControls()
 {
     float fDeltaTime = Game::Get().GetDeltaTime();
 
+    float fSpeed = (IS_STATE_SET(nState, State::Jump) ? s_fAirSpeed : s_fGroundSpeed);
+    if (IS_STATE_SET(nState, State::Faster)) fSpeed *= 50.0f;
+
     if (IS_STATE_SET(nState, State::Left))
-        vVel.x += (IS_STATE_SET(nState, State::Jump) ? -s_fAirSpeed : -s_fGroundSpeed) * fDeltaTime;
+        vVel.x += -fSpeed * fDeltaTime;
 
     if (IS_STATE_SET(nState, State::Right))
-        vVel.x += (IS_STATE_SET(nState, State::Jump) ? s_fAirSpeed : s_fGroundSpeed) * fDeltaTime;
+        vVel.x += fSpeed * fDeltaTime;
 }
 
 void Dynamic_Enemy::UpdateCollision(std::list<def::side>& vecSides)
@@ -391,5 +418,97 @@ void Dynamic_Enemy::SwitchFrame(float fPeriod)
     Dynamic::SwitchFrame(fPeriod);
 
     vGraphicsID.x = nFrameCounter;
+}
+
+bool Dynamic_Enemy::OnHit()
+{
+    return true;
+}
+
+bool Dynamic_Enemy::OnSideTouch(def::side nSide)
+{
+    return false;
+}
+
+Dynamic_Enemy_Mushroom::Dynamic_Enemy_Mushroom(const def::vf2d& pos)
+    : Dynamic_Enemy(pos, { 1.0f, 1.0f })
+{
     vGraphicsID.y = 3;
+}
+
+bool Dynamic_Enemy_Mushroom::OnHit()
+{
+    return true;
+}
+
+bool Dynamic_Enemy_Mushroom::OnSideTouch(def::side nSide)
+{
+    return false;
+}
+
+void Dynamic_Enemy_Mushroom::SwitchFrame(float fPeriod)
+{
+    Dynamic_Enemy::SwitchFrame(fPeriod);
+}
+
+Dynamic_Enemy_Turtle::Dynamic_Enemy_Turtle(const def::vf2d& pos)
+    : Dynamic_Enemy(pos, { 1.0f, 2.0f })
+{
+    rModel.size = { 1.0f, 2.0f };
+    SetPosition(pos);
+
+    vGraphicsID.y = 4;
+}
+
+bool Dynamic_Enemy_Turtle::OnHit()
+{
+    switch (nTurtleState)
+    {
+    case TurtleState::Walk:
+    {
+        vGraphicsID.x = 2;
+        vGraphicsID.y = 5;
+        nTurtleState = TurtleState::Shell;
+        vVel.x = 0.0f;
+        UNSET_STATE(nState, State::Left);
+        SET_STATE(nState, State::Idle);
+        rModel.size = { 1.0f, 1.0f };
+        SetPosition({ rModel.pos.x, rModel.pos.y + 1.0f });
+    }
+    break;
+
+    }
+    
+    return false;
+}
+
+bool Dynamic_Enemy_Turtle::OnSideTouch(def::side nSide)
+{
+    if (nTurtleState == TurtleState::Walk)
+        return false;
+
+    bFriendlyFire = true;
+
+    UNSET_STATE(nState, State::Idle);
+    SET_STATE(nState, State::Faster);
+
+    switch (nSide)
+    {
+    case def::SIDE_LEFT:
+        SET_STATE(nState, State::Right);
+    break;
+
+    case def::SIDE_RIGHT:
+        SET_STATE(nState, State::Left);
+    break;
+
+    }
+
+    return true;
+}
+
+void Dynamic_Enemy_Turtle::SwitchFrame(float fPeriod)
+{
+    if (nTurtleState == TurtleState::Walk)
+        Dynamic_Enemy::SwitchFrame(fPeriod);
 }

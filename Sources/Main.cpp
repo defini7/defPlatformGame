@@ -1,6 +1,6 @@
 #include "../Include/Game.hpp"
 
-void Initialise()
+void InitialiZe()
 {
 	auto& lua = ScriptsManager::Get().state;
 	lua.new_enum("TileType", "Empty", 0, "Coin", 1, "Grass", 2, "Dirt", 3);
@@ -13,15 +13,20 @@ void Initialise()
 			engine.pPlayer = engine.vecLevels[index - 1]->listDynamics.begin()->pDynamic;
 		};
 
-	lua["SpawnEnemy"] = [](size_t index, float x, float y)
+	lua["SpawnMushroom"] = [](size_t index, float x, float y)
 		{
-			Game::Get().AddDynamic_back(index - 1, new Dynamic_Enemy({ x, y }));
+			Game::Get().AddDynamic_back(index - 1, new Dynamic_Enemy_Mushroom({ x, y }));
+		};
+
+	lua["SpawnTurtle"] = [](size_t index, float x, float y)
+		{
+			Game::Get().AddDynamic_back(index - 1, new Dynamic_Enemy_Turtle({ x, y }));
 		};
 }
 
 int main()
 {
-	Initialise();
+	InitialiZe();
 
 	if (!ScriptsManager::Get().LoadScript("Assets/config.lua"))
 	{
