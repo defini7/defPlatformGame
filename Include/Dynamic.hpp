@@ -40,9 +40,6 @@ public:
     inline static float s_fVelocityEpsilon = 0.0f;
     inline static float s_fFriction = 0.0f;
     inline static float s_fFallSpeed = 0.0f;
-
-    inline static def::vf2d s_vMinVelocity;
-    inline static def::vf2d s_vMaxVelocity;
     
 public:
     def::rect<float> rModel;
@@ -54,7 +51,7 @@ public:
     float fFrameTimer = 0.0f;
     int nFrameCounter = 0;
 
-    int nState = State::Left;
+    uint64_t nState = State::Left;
 
     bool bFriendlyFire = false;
 
@@ -93,6 +90,9 @@ public:
     static float s_fAirSpeed;
     static float s_fJumpSpeed;
 
+    inline static def::vf2d s_vMinVelocity;
+    inline static def::vf2d s_vMaxVelocity;
+
 };
 
 class Dynamic_Enemy : public Dynamic_Creature
@@ -113,6 +113,9 @@ public:
     static float s_fGroundSpeed;
     static float s_fAirSpeed;
     static float s_fJumpSpeed;
+
+    inline static def::vf2d s_vMinVelocity;
+    inline static def::vf2d s_vMaxVelocity;
 
 };
 

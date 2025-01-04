@@ -168,8 +168,6 @@ void Dynamic_Creature::ApplyGravity()
     vVel.y += s_fFallSpeed * fDeltaTime;
     vVel.x += -s_fFriction * vVel.x * fDeltaTime;
 
-    vVel = vVel.max(s_vMinVelocity).min(s_vMaxVelocity);
-
     Dynamic::ApplyGravity();
 }
 
@@ -214,6 +212,8 @@ void Dynamic_Player::UpdateCollision(std::list<def::side>& vecSides)
     Game& engine = Game::Get();
     auto& itLevel = engine.itCurrentLevel;
     Level* pLevel = *itLevel;
+
+    vVel = vVel.max(s_vMinVelocity).min(s_vMaxVelocity);
 
     def::vf2d vNewPos = rModel.pos + vVel * engine.GetDeltaTime();
 
@@ -385,7 +385,7 @@ void Dynamic_Enemy::UpdateControls()
     float fDeltaTime = Game::Get().GetDeltaTime();
 
     float fSpeed = (IS_STATE_SET(nState, State::Jump) ? s_fAirSpeed : s_fGroundSpeed);
-    if (IS_STATE_SET(nState, State::Faster)) fSpeed *= 50.0f;
+    if (IS_STATE_SET(nState, State::Faster)) fSpeed *= 100.0f;
 
     if (IS_STATE_SET(nState, State::Left))
         vVel.x += -fSpeed * fDeltaTime;
@@ -396,6 +396,8 @@ void Dynamic_Enemy::UpdateControls()
 
 void Dynamic_Enemy::UpdateCollision(std::list<def::side>& vecSides)
 {
+    vVel = vVel.max(s_vMinVelocity).min(s_vMaxVelocity);
+
     Dynamic_Creature::UpdateCollision(vecSides);
 
     for (auto side : vecSides)

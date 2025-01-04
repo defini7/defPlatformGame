@@ -84,20 +84,22 @@ Game = {
     Velocity = {
         Epsilon = 2,
         Friction = 3,
-        FallSpeed = 20,
-        Min = { -10, -100 },
-        Max = { 10, 100 },
+        FallSpeed = 30,
 
         Player = {
             GroundSpeed = 12,
             AirSpeed = 10,
-            JumpSpeed = 11
+            JumpSpeed = 13.5,
+            Min = { -10, -100 },
+            Max = { 10, 100 }
         },
 
         Enemy = {
             GroundSpeed = 8,
             AirSpeed = 6,
-            JumpSpeed = 5
+            JumpSpeed = 5,
+            Min = { -20, -100 },
+            Max = { 20, 100 }
         }
     }
 }

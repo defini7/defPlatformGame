@@ -179,35 +179,36 @@ bool Game::LoadConfig()
     INIT_TABLE(tblVelocityPlayer, tblVelocity["Player"], "Game.Velocity.Player");
     INIT_TABLE(tblVelocityEnemy, tblVelocity["Enemy"], "Game.Velocity.Enemy");
 
-    auto load_velocity = []<class T>(sol::table& table)
-        {
-            T::s_fGroundSpeed = table["GroundSpeed"].get_or(15.0f);
-            T::s_fAirSpeed = table["AirSpeed"].get_or(17.5f);
-            T::s_fJumpSpeed = table["JumpSpeed"].get_or(12.0f);
-        };
+    auto load_velocity = []<class T>(sol::table & table)
+    {
+        T::s_fGroundSpeed = table["GroundSpeed"].get_or(15.0f);
+        T::s_fAirSpeed = table["AirSpeed"].get_or(17.5f);
+        T::s_fJumpSpeed = table["JumpSpeed"].get_or(12.0f);
+    };
 
     Dynamic::s_fVelocityEpsilon = tblVelocity["Epsilon"].get_or(1.0f);
     Dynamic::s_fFriction = tblVelocity["Friction"].get_or(4.0f);
 
-    load_velocity.template operator() <Dynamic_Player>(tblVelocityPlayer);
-    load_velocity.template operator() <Dynamic_Enemy>(tblVelocityEnemy);
+    load_velocity.template operator() < Dynamic_Player > (tblVelocityPlayer);
+    load_velocity.template operator() < Dynamic_Enemy > (tblVelocityEnemy);
 
     Dynamic::s_fFallSpeed = tblVelocity["FallSpeed"].get_or(20.0f);
 
-    auto Velocity_GetVector = [&](const char* name, def::vf2d& vector)
+    auto Velocity_GetVector = [&](sol::optional<sol::table> table, def::vf2d& vector)
         {
-            sol::optional<sol::table> optTable = tblVelocity[name].get<decltype(optTable)>();
-
-            if (optTable)
+            if (table)
             {
-                sol::table& tblVector = optTable.value();
+                sol::table& tblVector = table.value();
                 vector.x = tblVector[1];
                 vector.y = tblVector[2];
             }
         };
 
-    Velocity_GetVector("Min", Dynamic::s_vMinVelocity);
-    Velocity_GetVector("Max", Dynamic::s_vMaxVelocity);
+    Velocity_GetVector(tblVelocityEnemy["Min"].get<sol::optional<sol::table>>(), Dynamic_Enemy::s_vMinVelocity);
+    Velocity_GetVector(tblVelocityEnemy["Max"].get<sol::optional<sol::table>>(), Dynamic_Enemy::s_vMaxVelocity);
+
+    Velocity_GetVector(tblVelocityPlayer["Min"].get<sol::optional<sol::table>>(), Dynamic_Player::s_vMinVelocity);
+    Velocity_GetVector(tblVelocityPlayer["Max"].get<sol::optional<sol::table>>(), Dynamic_Player::s_vMaxVelocity);
 
     return true;
 }
