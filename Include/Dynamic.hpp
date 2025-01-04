@@ -31,29 +31,30 @@ public:
 
 public:
     virtual void UpdateControls();
-    virtual void UpdateCollision(std::list<def::side>& vecSides);
+    virtual void UpdateCollision(std::list<def::side>& sides);
     virtual void ApplyGravity();
 
-    virtual void SwitchFrame(float fPeriod = 0.2f);
+    virtual void SwitchFrame(const float period);
 
 public:
-    inline static float s_fVelocityEpsilon = 0.0f;
-    inline static float s_fFriction = 0.0f;
-    inline static float s_fFallSpeed = 0.0f;
+    inline static float s_VelocityEpsilon = 0.0f;
+    inline static float s_Friction = 0.0f;
+    inline static float s_FallSpeed = 0.0f;
     
-public:
-    def::rect<float> rModel;
-    def::line<float> rEdgelessModel[4];
-    def::vf2d vVel;
+    def::rect<float> model;
+    def::line<float> edgelessModel[4];
 
-    def::vi2d vGraphicsID;
+    def::vf2d velocity;
 
-    float fFrameTimer = 0.0f;
-    int nFrameCounter = 0;
+    def::vi2d graphicsID;
 
-    uint64_t nState = State::Left;
+    uint64_t state = State::Left;
+    int frameCounter = 0;
 
-    bool bFriendlyFire = false;
+    bool isFriendlyFire = false;
+
+private:
+    float m_FrameTimer = 0.0f;
 
 };
 
@@ -65,7 +66,7 @@ public:
 
 public:
     void UpdateControls() override;
-    void UpdateCollision(std::list<def::side>& vecSides) override;
+    void UpdateCollision(std::list<def::side>& sides) override;
     void ApplyGravity() override;
 
 };
@@ -80,18 +81,18 @@ public:
 
 public:
     void UpdateControls() override;
-    void UpdateCollision(std::list<def::side>& vecSides) override;
-    void SwitchFrame(float fPeriod = 0.2f) override;
+    void UpdateCollision(std::list<def::side>& sides) override;
+    void SwitchFrame(const float period) override;
 
-    bool OnEnemyTouch(Dynamic_Enemy* pEnemy, def::side side);
+    bool OnEnemyTouch(Dynamic_Enemy* enemy, const def::side side);
 
 public:
-    static float s_fGroundSpeed;
-    static float s_fAirSpeed;
-    static float s_fJumpSpeed;
+    static float s_GroundSpeed;
+    static float s_AirSpeed;
+    static float s_JumpSpeed;
 
-    inline static def::vf2d s_vMinVelocity;
-    inline static def::vf2d s_vMaxVelocity;
+    inline static def::vf2d s_MinVelocity;
+    inline static def::vf2d s_MaxVelocity;
 
 };
 
@@ -103,19 +104,19 @@ public:
 
 public:
     void UpdateControls() override;
-    void UpdateCollision(std::list<def::side>& vecSides) override;
-    void SwitchFrame(float fPeriod = 0.2f) override;
+    void UpdateCollision(std::list<def::side>& sides) override;
+    void SwitchFrame(const float period) override;
 
     virtual bool OnHit();
-    virtual bool OnSideTouch(def::side nSide);
+    virtual bool OnSideTouch(const def::side side);
 
 public:
-    static float s_fGroundSpeed;
-    static float s_fAirSpeed;
-    static float s_fJumpSpeed;
+    static float s_GroundSpeed;
+    static float s_AirSpeed;
+    static float s_JumpSpeed;
 
-    inline static def::vf2d s_vMinVelocity;
-    inline static def::vf2d s_vMaxVelocity;
+    inline static def::vf2d s_MinVelocity;
+    inline static def::vf2d s_MaxVelocity;
 
 };
 
@@ -126,9 +127,9 @@ public:
 
 public:
     bool OnHit() override;
-    bool OnSideTouch(def::side nSide) override;
+    bool OnSideTouch(const def::side side) override;
 
-    void SwitchFrame(float fPeriod = 0.2f) override;
+    void SwitchFrame(const float period) override;
 };
 
 class Dynamic_Enemy_Turtle : public Dynamic_Enemy
@@ -138,13 +139,13 @@ public:
     {
         Walk,
         Shell
-    } nTurtleState = TurtleState::Walk;
+    } turtleState = TurtleState::Walk;
 
     Dynamic_Enemy_Turtle(const def::vf2d& pos);
 
 public:
     bool OnHit() override;
-    bool OnSideTouch(def::side nSide) override;
+    bool OnSideTouch(def::side side) override;
 
-    void SwitchFrame(float fPeriod = 0.2f) override;
+    void SwitchFrame(const float period) override;
 };

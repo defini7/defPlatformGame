@@ -7,8 +7,8 @@ ScriptsManager::ScriptsManager()
 
 ScriptsManager& ScriptsManager::Get()
 {
-	static ScriptsManager me;
-	return me;
+	static ScriptsManager manager;
+	return manager;
 }
 
 bool ScriptsManager::LoadScript(const std::string& filename)
@@ -20,6 +20,7 @@ bool ScriptsManager::LoadScript(const std::string& filename)
 	catch (const sol::error& e)
 	{
 		logger::Error(e.what());
+
 		return false;
 	}
 

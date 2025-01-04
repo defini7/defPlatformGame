@@ -50,19 +50,25 @@ protected:
     static bool LoadConfig();
 
 public:
-    void AddDynamic_front(size_t nLevel, Dynamic* pDynamic);
-    void AddDynamic_back(size_t nLevel, Dynamic* pDynamic);
+    void AddDynamicFront(size_t level, Dynamic* dynamic);
+    void AddDynamicBack(size_t level, Dynamic* dynamic);
 
-public:
-    GameState nState = GameState::Menu;
-    bool bRunning = true;
+    std::vector<Level*>& GetLevels();
+    std::vector<Level*>::iterator& GetCurrentLevel();
+    Dynamic*& GetPlayer();
 
-    int nScore = 0;
-	int nMenuCursor = 0;
+    void IncreaseScore();
 
-    std::vector<Level*> vecLevels;
-    std::vector<Level*>::iterator itCurrentLevel;
+private:
+    GameState m_State = GameState::Menu;
+    bool m_IsRunning = true;
 
-    Dynamic* pPlayer;
+    int m_Score = 0;
+	int m_MenuCursor = 0;
+
+    std::vector<Level*> m_Levels;
+    std::vector<Level*>::iterator m_CurrentLevel;
+
+    Dynamic* m_Player;
 
 };

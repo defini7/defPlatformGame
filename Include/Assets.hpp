@@ -26,14 +26,14 @@ public:
 
     bool LoadConfig();
     
-    std::unordered_map<TileType, def::vi2d> mapSpriteFileOffsets;
-    def::vi2d vTileSize;
+    std::unordered_map<TileType, def::vi2d> spriteFileOffsets;
+    def::vi2d tileSize;
 
 private:
     Assets() = default;
 	~Assets() = default;
 
-    std::unordered_map<std::string, def::Graphic*> m_mapSprites;
-    std::unordered_map<std::string, Level*> m_mapLevels;
+    std::unordered_map<std::string, def::Graphic*> m_Sprites;
+    std::unordered_map<std::string, Level*> m_Levels;
 
 };

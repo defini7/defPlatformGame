@@ -3,7 +3,7 @@
 
 Dynamic::Dynamic(const def::vf2d& pos, const def::vf2d& size)
 {
-    rModel.size = size;
+    model.size = size;
     SetPosition(pos);
 }
 
@@ -11,77 +11,77 @@ void Dynamic::UpdateControls()
 {
 }
 
-void Dynamic::UpdateCollision(std::list<def::side>& vecSides)
+void Dynamic::UpdateCollision(std::list<def::side>& sides)
 {
-    vecSides.push_back(def::SIDE_NONE);
+    sides.push_back(def::SIDE_NONE);
 }
 
 void Dynamic::ApplyGravity()
 {
-    if (!IS_STATE_SET(nState, State::Jump))
+    if (!IS_STATE_SET(state, State::Jump))
     {
-        if (vVel.x == 0.0f && vVel.y == 0.0f)
-            SET_STATE(nState, State::Idle);
+        if (velocity.x == 0.0f && velocity.y == 0.0f)
+            SET_STATE(state, State::Idle);
     }
 }
 
 void Dynamic::Update()
 {
-    SwitchFrame();
+    SwitchFrame(0.2f);
     UpdateControls();
     ApplyGravity();
 
-    std::list<def::side> vecSides;
-    UpdateCollision(vecSides);
+    std::list<def::side> sides;
+    UpdateCollision(sides);
 }
 
 void Dynamic::SetPosition(const def::vf2d& pos)
 {
-    rModel.pos = pos;
+    model.pos = pos;
 
-    float ix = 1.0f / Assets::Get().vTileSize.x;
-    float iy = 1.0f / Assets::Get().vTileSize.y;
+    float ix = 1.0f / Assets::Get().tileSize.x;
+    float iy = 1.0f / Assets::Get().tileSize.y;
 
     // Left side
-    rEdgelessModel[0].start = { pos.x, pos.y + iy };
-    rEdgelessModel[0].end = { pos.x, pos.y + rModel.size.y - iy };
+    edgelessModel[0].start = { pos.x, pos.y + iy };
+    edgelessModel[0].end = { pos.x, pos.y + model.size.y - iy };
 
     // Top side
-    rEdgelessModel[1].start = { pos.x + ix, pos.y };
-    rEdgelessModel[1].end = { pos.x + rModel.size.x - ix, pos.y };
+    edgelessModel[1].start = { pos.x + ix, pos.y };
+    edgelessModel[1].end = { pos.x + model.size.x - ix, pos.y };
 
     // Right side
-    rEdgelessModel[2].start = { pos.x + rModel.size.x, pos.y + iy };
-    rEdgelessModel[2].end = { pos.x + rModel.size.x, pos.y + rModel.size.y - iy };
+    edgelessModel[2].start = { pos.x + model.size.x, pos.y + iy };
+    edgelessModel[2].end = { pos.x + model.size.x, pos.y + model.size.y - iy };
 
     // Bottom side
-    rEdgelessModel[3].start = { pos.x + ix, pos.y + rModel.size.y };
-    rEdgelessModel[3].end = { pos.x + rModel.size.x - ix, pos.y + rModel.size.y };
+    edgelessModel[3].start = { pos.x + ix, pos.y + model.size.y };
+    edgelessModel[3].end = { pos.x + model.size.x - ix, pos.y + model.size.y };
 }
 
 void Dynamic::OffsetPosition(const def::vf2d& offset)
 {
-    rModel.pos += offset;
+    model.pos += offset;
 
     for (uint8_t i = 0; i < 4; i++)
     {
-        rEdgelessModel[i].start += offset;
-        rEdgelessModel[i].end += offset;
+        edgelessModel[i].start += offset;
+        edgelessModel[i].end += offset;
     }
 }
 
-void Dynamic::SwitchFrame(float fPeriod)
+void Dynamic::SwitchFrame(const float period)
 {
-    if (!IS_STATE_SET(nState, State::Jump) && !IS_STATE_SET(nState, State::Idle))
+    if (!IS_STATE_SET(state, State::Jump) && !IS_STATE_SET(state, State::Idle))
     {
-        if (fFrameTimer >= fPeriod)
+        if (m_FrameTimer >= period)
         {
-            ++nFrameCounter %= 2;
-            fFrameTimer -= fPeriod;
+            ++frameCounter %= 2;
+            m_FrameTimer -= period;
         }
     }
 
-    fFrameTimer += Game::Get().GetDeltaTime();
+    m_FrameTimer += Game::Get().GetDeltaTime();
 }
 
 
@@ -96,77 +96,77 @@ void Dynamic_Creature::UpdateControls()
 {
 }
 
-void Dynamic_Creature::UpdateCollision(std::list<def::side>& vecSides)
+void Dynamic_Creature::UpdateCollision(std::list<def::side>& sides)
 {
-    def::vf2d vNewPos = rModel.pos + vVel * Game::Get().GetDeltaTime();
+    def::vf2d newPos = model.pos + velocity * Game::Get().GetDeltaTime();
 
-    Level* pLevel = *Game::Get().itCurrentLevel;
+    Level* level = *Game::Get().GetCurrentLevel();
 
-    if (-s_fVelocityEpsilon < vVel.x && vVel.x < s_fVelocityEpsilon && !IS_STATE_SET(nState, State::Jump))
-        SET_STATE(nState, State::Idle);
+    if (-s_VelocityEpsilon < velocity.x && velocity.x < s_VelocityEpsilon && !IS_STATE_SET(state, State::Jump))
+        SET_STATE(state, State::Idle);
     else
-        UNSET_STATE(nState, State::Idle);
+        UNSET_STATE(state, State::Idle);
 
-    auto go = [](TileType tile)
+    auto Go = [](TileType tile)
         {
             return tile != TileType::Grass && tile != TileType::Dirt;
         };
 
-    if (vVel.x < 0.0f)
+    if (velocity.x < 0.0f)
     {
-        SET_STATE(nState, State::Left);
-        UNSET_STATE(nState, State::Right);
+        SET_STATE(state, State::Left);
+        UNSET_STATE(state, State::Right);
 
-        if (!go(pLevel->GetTile(def::vi2d(vNewPos.x, rModel.pos.y))) || !go(pLevel->GetTile(def::vi2d(vNewPos.x, rModel.pos.y + rModel.size.y - 0.1f))))
+        if (!Go(level->GetTile(def::vi2d(newPos.x, model.pos.y))) || !Go(level->GetTile(def::vi2d(newPos.x, model.pos.y + model.size.y - 0.1f))))
         {
-            vNewPos.x = floor(vNewPos.x) + rModel.size.x;
-            vecSides.push_back(def::SIDE_LEFT);
-            vVel.x = 0.0f;
+            newPos.x = floor(newPos.x) + model.size.x;
+            sides.push_back(def::SIDE_LEFT);
+            velocity.x = 0.0f;
         }
     }
-    else if (vVel.x > 0.0f)
+    else if (velocity.x > 0.0f)
     {
-        SET_STATE(nState, State::Right);
-        UNSET_STATE(nState, State::Left);
+        SET_STATE(state, State::Right);
+        UNSET_STATE(state, State::Left);
 
-        if (!go(pLevel->GetTile(def::vi2d(vNewPos.x + rModel.size.x, rModel.pos.y))) || !go(pLevel->GetTile(def::vi2d(vNewPos.x + rModel.size.x, rModel.pos.y + rModel.size.y - 0.1f))))
+        if (!Go(level->GetTile(def::vi2d(newPos.x + model.size.x, model.pos.y))) || !Go(level->GetTile(def::vi2d(newPos.x + model.size.x, model.pos.y + model.size.y - 0.1f))))
         {
-            vNewPos.x = floor(vNewPos.x);
-            vecSides.push_back(def::SIDE_RIGHT);
-            vVel.x = 0.0f;
+            newPos.x = floor(newPos.x);
+            sides.push_back(def::SIDE_RIGHT);
+            velocity.x = 0.0f;
         }
     }
 
-    if (vVel.y < 0.0f)
+    if (velocity.y < 0.0f)
     {
-        if (!go(pLevel->GetTile(vNewPos)) || !go(pLevel->GetTile(vNewPos + def::vf2d(rModel.size.x - 0.1f, 0.0f))))
+        if (!Go(level->GetTile(newPos)) || !Go(level->GetTile(newPos + def::vf2d(model.size.x - 0.1f, 0.0f))))
         {
-            vNewPos.y = floor(vNewPos.y) + rModel.size.y;
-            vecSides.push_back(def::SIDE_BOTTOM);
-            vVel.y = 0.0f;
+            newPos.y = floor(newPos.y) + model.size.y;
+            sides.push_back(def::SIDE_BOTTOM);
+            velocity.y = 0.0f;
         }
     }
-    else if (vVel.y > 0.0f)
+    else if (velocity.y > 0.0f)
     {
-        if (!go(pLevel->GetTile(vNewPos + def::vf2d(0.0f, 1.0f))) || !go(pLevel->GetTile(vNewPos + def::vf2d(rModel.size.x - 0.1f, rModel.size.y))))
+        if (!Go(level->GetTile(newPos + def::vf2d(0.0f, 1.0f))) || !Go(level->GetTile(newPos + def::vf2d(model.size.x - 0.1f, model.size.y))))
         {
-            vNewPos.y = floor(vNewPos.y);
-            vecSides.push_back(def::SIDE_TOP);
-            vVel.y = 0.0f;
+            newPos.y = floor(newPos.y);
+            sides.push_back(def::SIDE_TOP);
+            velocity.y = 0.0f;
             
-            UNSET_STATE(nState, State::Jump);
+            UNSET_STATE(state, State::Jump);
         }
     }
 
-    SetPosition(vNewPos);
+    SetPosition(newPos);
 }
 
 void Dynamic_Creature::ApplyGravity()
 {
     float fDeltaTime = Game::Get().GetDeltaTime();
 
-    vVel.y += s_fFallSpeed * fDeltaTime;
-    vVel.x += -s_fFriction * vVel.x * fDeltaTime;
+    velocity.y += s_FallSpeed * fDeltaTime;
+    velocity.x += -s_Friction * velocity.x * fDeltaTime;
 
     Dynamic::ApplyGravity();
 }
@@ -179,9 +179,9 @@ Dynamic_Player::Dynamic_Player(const def::vf2d& pos)
 {
 }
 
-float Dynamic_Player::s_fGroundSpeed = 0.0f;
-float Dynamic_Player::s_fAirSpeed = 0.0f;
-float Dynamic_Player::s_fJumpSpeed = 0.0f;
+float Dynamic_Player::s_GroundSpeed = 0.0f;
+float Dynamic_Player::s_AirSpeed = 0.0f;
+float Dynamic_Player::s_JumpSpeed = 0.0f;
 
 void Dynamic_Player::UpdateControls()
 {
@@ -191,52 +191,52 @@ void Dynamic_Player::UpdateControls()
     if (engine.IsFocused())
     {
         if (engine.GetKey(def::Key::LEFT).held || engine.GetKey(def::Key::A).held)
-            vVel.x += (IS_STATE_SET(nState, State::Jump) ? -s_fAirSpeed : -s_fGroundSpeed) * fDeltaTime;
+            velocity.x += (IS_STATE_SET(state, State::Jump) ? -s_AirSpeed : -s_GroundSpeed) * fDeltaTime;
 
         if (engine.GetKey(def::Key::RIGHT).held || engine.GetKey(def::Key::D).held)
-            vVel.x += (IS_STATE_SET(nState, State::Jump) ? s_fAirSpeed : s_fGroundSpeed) * fDeltaTime;
+            velocity.x += (IS_STATE_SET(state, State::Jump) ? s_AirSpeed : s_GroundSpeed) * fDeltaTime;
 
         if (engine.GetKey(def::Key::SPACE).pressed ||
             engine.GetKey(def::Key::UP).pressed ||
             engine.GetKey(def::Key::W).pressed)
         {
-            if (vVel.y == 0.0f) vVel.y = -s_fJumpSpeed;
-            SET_STATE(nState, State::Jump);
-            UNSET_STATE(nState, State::Idle);
+            if (velocity.y == 0.0f) velocity.y = -s_JumpSpeed;
+            SET_STATE(state, State::Jump);
+            UNSET_STATE(state, State::Idle);
         }
     }
 }
 
-void Dynamic_Player::UpdateCollision(std::list<def::side>& vecSides)
+void Dynamic_Player::UpdateCollision(std::list<def::side>& sides)
 {
     Game& engine = Game::Get();
-    auto& itLevel = engine.itCurrentLevel;
-    Level* pLevel = *itLevel;
+    auto& levelIterator = engine.GetCurrentLevel();
+    Level* level = *levelIterator;
 
-    vVel = vVel.max(s_vMinVelocity).min(s_vMaxVelocity);
+    velocity = velocity.max(s_MinVelocity).min(s_MaxVelocity);
 
-    def::vf2d vNewPos = rModel.pos + vVel * engine.GetDeltaTime();
+    def::vf2d newPos = model.pos + velocity * engine.GetDeltaTime();
 
     // Check for collision with tiles
 
     std::list<def::vf2d> listNewPos =
     {
-        vNewPos,
-        vNewPos + def::vf2d(0.0f, 1.0f),
-        vNewPos + def::vf2d(1.0f, 0.0f),
-        vNewPos + 1.0f
+        newPos,
+        newPos + def::vf2d(0.0f, 1.0f),
+        newPos + def::vf2d(1.0f, 0.0f),
+        newPos + 1.0f
     };
 
     for (const auto& pos : listNewPos)
     {
-        if (pLevel->GetTile(pos) == TileType::Coin)
+        if (level->GetTile(pos) == TileType::Coin)
         {
-            pLevel->SetTile(pos, TileType::Empty);
-            engine.nScore++;
+            level->SetTile(pos, TileType::Empty);
+            engine.IncreaseScore();
         }
     }
 
-    auto& listDynamics = pLevel->listDynamics;
+    auto& dynamics = level->dynamics;
 
     auto CheckCollision = [&](Dynamic_Creature* pCreature1, Dynamic_Creature* pCreature2)
         {
@@ -245,128 +245,133 @@ void Dynamic_Player::UpdateCollision(std::list<def::side>& vecSides)
                 {
                     std::vector<def::vf2d> points;
 
-                    if (def::intersects(pCreature1->rEdgelessModel[i], pCreature2->rEdgelessModel[j], points))
+                    if (def::intersects(pCreature1->edgelessModel[i], pCreature2->edgelessModel[j], points))
                          return def::side(j);
                 }
 
             return def::SIDE_NONE;
         };
 
-    for (auto it = std::next(listDynamics.begin()); it != listDynamics.end(); it++)
+    for (auto it = std::next(dynamics.begin()); it != dynamics.end(); it++)
     {
-        Dynamic_Enemy* pEnemy = static_cast<Dynamic_Enemy*>(it->pDynamic);
-        if (it->bRedundant || !pEnemy) continue;
+        Dynamic_Enemy* enemy = static_cast<Dynamic_Enemy*>(it->dynamic);
 
-        def::side side = CheckCollision(this, pEnemy);
+        if (it->isRedundant || !enemy)
+            continue;
+
+        def::side side = CheckCollision(this, enemy);
 
         if (side != def::SIDE_NONE)
         {
-            if (OnEnemyTouch(pEnemy, side))
+            if (OnEnemyTouch(enemy, side))
             {
-                if (pEnemy->OnHit())
+                if (enemy->OnHit())
                 {
                     // Here we kill an enemy
-                    it->bRedundant = true;
+                    it->isRedundant = true;
                 }
             }
             else
             {
                 // and here we kill a player
-                listDynamics.begin()->bRedundant = true;
+                dynamics.begin()->isRedundant = true;
             }
         }
     }
 
-    for (auto it1 = std::next(listDynamics.begin()); it1 != listDynamics.end(); it1++)
-        for (auto it2 = std::next(listDynamics.begin()); it2 != listDynamics.end(); it2++)
+    for (auto it1 = std::next(dynamics.begin()); it1 != dynamics.end(); it1++)
+        for (auto it2 = std::next(dynamics.begin()); it2 != dynamics.end(); it2++)
         {
-            if (it1 == it2) continue;
+            if (it1 == it2)
+                continue;
 
-            Dynamic_Enemy* pEnemy1 = static_cast<Dynamic_Enemy*>(it1->pDynamic);
-            Dynamic_Enemy* pEnemy2 = static_cast<Dynamic_Enemy*>(it2->pDynamic);
+            Dynamic_Enemy* enemy1 = static_cast<Dynamic_Enemy*>(it1->dynamic);
+            Dynamic_Enemy* enemy2 = static_cast<Dynamic_Enemy*>(it2->dynamic);
 
-            if (pEnemy1->bFriendlyFire)
+            if (enemy1->isFriendlyFire)
             {
-                if (CheckCollision(pEnemy1, pEnemy2) != def::SIDE_NONE)
-                    it2->bRedundant = true;
+                if (CheckCollision(enemy1, enemy2) != def::SIDE_NONE)
+                    it2->isRedundant = true;
             }
 
-            if (pEnemy2->bFriendlyFire)
+            if (enemy2->isFriendlyFire)
             {
-                if (CheckCollision(pEnemy1, pEnemy2) != def::SIDE_NONE)
-                    it1->bRedundant = true;
+                if (CheckCollision(enemy1, enemy2) != def::SIDE_NONE)
+                    it1->isRedundant = true;
             }
         }
 
-    Dynamic_Creature::UpdateCollision(vecSides);
+    Dynamic_Creature::UpdateCollision(sides);
 
     // Switch level (a.k.a. map)
 
-    if (rModel.pos.x < 0.0f)
+    auto& levels = engine.GetLevels();
+
+    if (model.pos.x < 0.0f)
     {
-        if (itLevel == engine.vecLevels.begin())
+        if (levelIterator == levels.begin())
         {
-            SetPosition({ floor(rModel.pos.x) + 1.0f, rModel.pos.y });
-            vVel.x = 0.0f;
+            SetPosition({ floor(model.pos.x) + 1.0f, model.pos.y });
+            velocity.x = 0.0f;
         }
         else
         {
-            OffsetPosition({ float(pLevel->GetSize().x - 1), 0.0f });
+            OffsetPosition({ float(level->GetSize().x - 1), 0.0f });
 
-            auto& listDynamics = pLevel->listDynamics;
+            auto& dynamics = level->dynamics;
 
-            auto& player = listDynamics.front();
-            player.bRedundant = true;
-            --itLevel;
+            auto& player = dynamics.front();
+            player.isRedundant = true;
+            --levelIterator;
 
-            (*itLevel)->listDynamics.push_front({ false, player.pDynamic });
-            Game::Get().pPlayer = (*itLevel)->listDynamics.begin()->pDynamic;
+            (*levelIterator)->dynamics.push_front({ false, player.dynamic });
+            Game::Get().GetPlayer() = (*levelIterator)->dynamics.begin()->dynamic;
         }
     }
-    else if (rModel.pos.x >= pLevel->GetSize().x - 1.0f)
+    else if (model.pos.x >= level->GetSize().x - 1.0f)
     {
-        if (itLevel == engine.vecLevels.end() - 1)
+        if (levelIterator == levels.end() - 1)
         {
-            SetPosition({ floor(rModel.pos.x), rModel.pos.y });
-            vVel.x = 0.0f;
+            SetPosition({ floor(model.pos.x), model.pos.y });
+            velocity.x = 0.0f;
         }
         else
         {
-            OffsetPosition({ float(1 - pLevel->GetSize().x), 0.0f });
+            OffsetPosition({ float(1 - level->GetSize().x), 0.0f });
 
-            auto& listDynamics = pLevel->listDynamics;
+            auto& dynamics = level->dynamics;
 
-            auto& player = listDynamics.front();
-            player.bRedundant = true;
-            ++itLevel;
+            auto& player = dynamics.front();
+            player.isRedundant = true;
+            ++levelIterator;
 
-            (*itLevel)->listDynamics.push_front({ false, player.pDynamic });
-            Game::Get().pPlayer = (*itLevel)->listDynamics.begin()->pDynamic;
+            (*levelIterator)->dynamics.push_front({ false, player.dynamic });
+            Game::Get().GetPlayer() = (*levelIterator)->dynamics.begin()->dynamic;
         }
     }
 }
 
-void Dynamic_Player::SwitchFrame(float fPeriod)
+void Dynamic_Player::SwitchFrame(const float period)
 {
-    Dynamic::SwitchFrame(fPeriod);
+    Dynamic::SwitchFrame(period);
 
-    if      (IS_STATE_SET(nState, State::Idle)) vGraphicsID.y = 0;
-    else if (IS_STATE_SET(nState, State::Jump)) vGraphicsID.y = 2;
-    else                                        vGraphicsID.y = nFrameCounter;
+    if      (IS_STATE_SET(state, State::Idle)) graphicsID.y = 0;
+    else if (IS_STATE_SET(state, State::Jump)) graphicsID.y = 2;
+    else                                       graphicsID.y = frameCounter;
 
-    if      (IS_STATE_SET(nState, State::Right)) vGraphicsID.x = 0;
-    else if (IS_STATE_SET(nState, State::Left))  vGraphicsID.x = 1;
+    if      (IS_STATE_SET(state, State::Right)) graphicsID.x = 0;
+    else if (IS_STATE_SET(state, State::Left))  graphicsID.x = 1;
 }
 
-bool Dynamic_Player::OnEnemyTouch(Dynamic_Enemy* pEnemy, def::side side)
+bool Dynamic_Player::OnEnemyTouch(Dynamic_Enemy* enemy, def::side side)
 {
     if (side == def::SIDE_TOP)
     {
-        vVel.y = -s_fJumpSpeed * 0.5f;
+        velocity.y = -s_JumpSpeed * 0.5f;
         return true;
     }
  
-    return pEnemy->OnSideTouch(side);
+    return enemy->OnSideTouch(side);
 }
 
 
@@ -376,50 +381,50 @@ Dynamic_Enemy::Dynamic_Enemy(const def::vf2d& pos, const def::vf2d& size)
 {
 }
 
-float Dynamic_Enemy::s_fGroundSpeed = 0.0f;
-float Dynamic_Enemy::s_fAirSpeed = 0.0f;
-float Dynamic_Enemy::s_fJumpSpeed = 0.0f;
+float Dynamic_Enemy::s_GroundSpeed = 0.0f;
+float Dynamic_Enemy::s_AirSpeed = 0.0f;
+float Dynamic_Enemy::s_JumpSpeed = 0.0f;
 
 void Dynamic_Enemy::UpdateControls()
 {
-    float fDeltaTime = Game::Get().GetDeltaTime();
+    float deltaTime = Game::Get().GetDeltaTime();
 
-    float fSpeed = (IS_STATE_SET(nState, State::Jump) ? s_fAirSpeed : s_fGroundSpeed);
-    if (IS_STATE_SET(nState, State::Faster)) fSpeed *= 100.0f;
+    float speed = (IS_STATE_SET(state, State::Jump) ? s_AirSpeed : s_GroundSpeed);
+    if (IS_STATE_SET(state, State::Faster)) speed *= 100.0f;
 
-    if (IS_STATE_SET(nState, State::Left))
-        vVel.x += -fSpeed * fDeltaTime;
+    if (IS_STATE_SET(state, State::Left))
+        velocity.x += -speed * deltaTime;
 
-    if (IS_STATE_SET(nState, State::Right))
-        vVel.x += fSpeed * fDeltaTime;
+    if (IS_STATE_SET(state, State::Right))
+        velocity.x += speed * deltaTime;
 }
 
-void Dynamic_Enemy::UpdateCollision(std::list<def::side>& vecSides)
+void Dynamic_Enemy::UpdateCollision(std::list<def::side>& sides)
 {
-    vVel = vVel.max(s_vMinVelocity).min(s_vMaxVelocity);
+    velocity = velocity.max(s_MinVelocity).min(s_MaxVelocity);
 
-    Dynamic_Creature::UpdateCollision(vecSides);
+    Dynamic_Creature::UpdateCollision(sides);
 
-    for (auto side : vecSides)
+    for (auto side : sides)
     {
         if (side == def::SIDE_LEFT)
         {
-            SET_STATE(nState, State::Right);
-            UNSET_STATE(nState, State::Left);
+            SET_STATE(state, State::Right);
+            UNSET_STATE(state, State::Left);
         }
         else if (side == def::SIDE_RIGHT)
         {
-            SET_STATE(nState, State::Left);
-            UNSET_STATE(nState, State::Right);
+            SET_STATE(state, State::Left);
+            UNSET_STATE(state, State::Right);
         }
     }
 }
 
-void Dynamic_Enemy::SwitchFrame(float fPeriod)
+void Dynamic_Enemy::SwitchFrame(const float period)
 {
-    Dynamic::SwitchFrame(fPeriod);
+    Dynamic::SwitchFrame(period);
 
-    vGraphicsID.x = nFrameCounter;
+    graphicsID.x = frameCounter;
 }
 
 bool Dynamic_Enemy::OnHit()
@@ -427,7 +432,7 @@ bool Dynamic_Enemy::OnHit()
     return true;
 }
 
-bool Dynamic_Enemy::OnSideTouch(def::side nSide)
+bool Dynamic_Enemy::OnSideTouch(const def::side nSide)
 {
     return false;
 }
@@ -435,7 +440,7 @@ bool Dynamic_Enemy::OnSideTouch(def::side nSide)
 Dynamic_Enemy_Mushroom::Dynamic_Enemy_Mushroom(const def::vf2d& pos)
     : Dynamic_Enemy(pos, { 1.0f, 1.0f })
 {
-    vGraphicsID.y = 3;
+    graphicsID.y = 3;
 }
 
 bool Dynamic_Enemy_Mushroom::OnHit()
@@ -443,39 +448,43 @@ bool Dynamic_Enemy_Mushroom::OnHit()
     return true;
 }
 
-bool Dynamic_Enemy_Mushroom::OnSideTouch(def::side nSide)
+bool Dynamic_Enemy_Mushroom::OnSideTouch(const def::side side)
 {
     return false;
 }
 
-void Dynamic_Enemy_Mushroom::SwitchFrame(float fPeriod)
+void Dynamic_Enemy_Mushroom::SwitchFrame(const float period)
 {
-    Dynamic_Enemy::SwitchFrame(fPeriod);
+    Dynamic_Enemy::SwitchFrame(period);
 }
 
 Dynamic_Enemy_Turtle::Dynamic_Enemy_Turtle(const def::vf2d& pos)
     : Dynamic_Enemy(pos, { 1.0f, 2.0f })
 {
-    rModel.size = { 1.0f, 2.0f };
+    model.size = { 1.0f, 2.0f };
     SetPosition(pos);
 
-    vGraphicsID.y = 4;
+    graphicsID.y = 4;
 }
 
 bool Dynamic_Enemy_Turtle::OnHit()
 {
-    switch (nTurtleState)
+    switch (turtleState)
     {
     case TurtleState::Walk:
     {
-        vGraphicsID.x = 2;
-        vGraphicsID.y = 5;
-        nTurtleState = TurtleState::Shell;
-        vVel.x = 0.0f;
-        UNSET_STATE(nState, State::Left);
-        SET_STATE(nState, State::Idle);
-        rModel.size = { 1.0f, 1.0f };
-        SetPosition({ rModel.pos.x, rModel.pos.y + 1.0f });
+        graphicsID.x = 2;
+        graphicsID.y = 5;
+
+        turtleState = TurtleState::Shell;
+
+        velocity.x = 0.0f;
+
+        UNSET_STATE(state, State::Left);
+        SET_STATE(state, State::Idle);
+
+        model.size = { 1.0f, 1.0f };
+        SetPosition({ model.pos.x, model.pos.y + 1.0f });
     }
     break;
 
@@ -484,24 +493,24 @@ bool Dynamic_Enemy_Turtle::OnHit()
     return false;
 }
 
-bool Dynamic_Enemy_Turtle::OnSideTouch(def::side nSide)
+bool Dynamic_Enemy_Turtle::OnSideTouch(const def::side side)
 {
-    if (nTurtleState == TurtleState::Walk)
+    if (turtleState == TurtleState::Walk)
         return false;
 
-    bFriendlyFire = true;
+    isFriendlyFire = true;
 
-    UNSET_STATE(nState, State::Idle);
-    SET_STATE(nState, State::Faster);
+    UNSET_STATE(state, State::Idle);
+    SET_STATE(state, State::Faster);
 
-    switch (nSide)
+    switch (side)
     {
     case def::SIDE_LEFT:
-        SET_STATE(nState, State::Right);
+        SET_STATE(state, State::Right);
     break;
 
     case def::SIDE_RIGHT:
-        SET_STATE(nState, State::Left);
+        SET_STATE(state, State::Left);
     break;
 
     }
@@ -509,8 +518,8 @@ bool Dynamic_Enemy_Turtle::OnSideTouch(def::side nSide)
     return true;
 }
 
-void Dynamic_Enemy_Turtle::SwitchFrame(float fPeriod)
+void Dynamic_Enemy_Turtle::SwitchFrame(const float period)
 {
-    if (nTurtleState == TurtleState::Walk)
-        Dynamic_Enemy::SwitchFrame(fPeriod);
+    if (turtleState == TurtleState::Walk)
+        Dynamic_Enemy::SwitchFrame(period);
 }

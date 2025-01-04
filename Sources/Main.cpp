@@ -9,18 +9,18 @@ void InitialiZe()
 		{
 			Game& engine = Game::Get();
 
-			engine.AddDynamic_front(index - 1, new Dynamic_Player({ x, y }));
-			engine.pPlayer = engine.vecLevels[index - 1]->listDynamics.begin()->pDynamic;
+			engine.AddDynamicFront(index - 1, new Dynamic_Player({ x, y }));
+			engine.GetPlayer() = engine.GetLevels()[index - 1]->dynamics.begin()->dynamic;
 		};
 
 	lua["SpawnMushroom"] = [](size_t index, float x, float y)
 		{
-			Game::Get().AddDynamic_back(index - 1, new Dynamic_Enemy_Mushroom({ x, y }));
+			Game::Get().AddDynamicBack(index - 1, new Dynamic_Enemy_Mushroom({ x, y }));
 		};
 
 	lua["SpawnTurtle"] = [](size_t index, float x, float y)
 		{
-			Game::Get().AddDynamic_back(index - 1, new Dynamic_Enemy_Turtle({ x, y }));
+			Game::Get().AddDynamicBack(index - 1, new Dynamic_Enemy_Turtle({ x, y }));
 		};
 }
 
@@ -36,23 +36,23 @@ int main()
 
 	auto& lua = ScriptsManager::Get().state;
 
-	std::optional<sol::table> optTableWindow = lua["Window"];
+	std::optional<sol::table> wrappedTableWindow = lua["Window"];
 
-	if (!optTableWindow)
+	if (!wrappedTableWindow)
 	{
 		logger::Error("Can't find 'Window' table\n");
 		return 1;
 	}
 
-	sol::table& tblWindow = optTableWindow.value();
+	sol::table& windowTable = wrappedTableWindow.value();
 
 	Game& game = Game::Get();
 
 	game.Construct(
-		tblWindow["ScreenWidth"].get_or(256),
-		tblWindow["ScreenHeight"].get_or(192),
-		tblWindow["PixelWidth"].get_or(4),
-		tblWindow["PixelHeight"].get_or(4)
+		windowTable["ScreenWidth"].get_or(256),
+		windowTable["ScreenHeight"].get_or(192),
+		windowTable["PixelWidth"].get_or(4),
+		windowTable["PixelHeight"].get_or(4)
 	);
 
 	game.Run();

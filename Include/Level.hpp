@@ -24,8 +24,8 @@ public:
 	void Create(const def::vi2d& size);
     void Load(const std::vector<TileType>& map, const def::vi2d& size);
 
-	void SetTile(const def::vi2d& p, TileType tile);
-	TileType GetTile(const def::vi2d& p) const;
+	void SetTile(const def::vi2d& pos, TileType tile);
+	TileType GetTile(const def::vi2d& pos) const;
 
     const def::vi2d& GetSize() const;
     const std::vector<TileType>& GetData() const;
@@ -33,14 +33,14 @@ public:
 public:
     struct DynamicUnit
     {
-        bool bRedundant = false;
-        Dynamic* pDynamic;
+        bool isRedundant = false;
+        Dynamic* dynamic;
     };
 
-    std::list<DynamicUnit> listDynamics;
+    std::list<DynamicUnit> dynamics;
 
 private:
-    def::vi2d m_vSize;
-	std::vector<TileType> m_vecData;
+    def::vi2d m_Size;
+	std::vector<TileType> m_Data;
 
 };

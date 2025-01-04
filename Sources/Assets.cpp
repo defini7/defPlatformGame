@@ -2,89 +2,99 @@
 
 Assets& Assets::Get()
 {
-    static Assets me;
-    return me;
+    static Assets assets;
+    return assets;
 }
 
 void Assets::LoadSprite(const std::string& name, def::Graphic* sprite)
 {
-    m_mapSprites[name] = sprite;
+    m_Sprites[name] = sprite;
 }
 
 def::Graphic* Assets::GetSprite(const std::string& name)
 {
-    return m_mapSprites[name];
+    return m_Sprites[name];
 }
 
 std::unordered_map<std::string, def::Graphic*>& Assets::GetSprites()
 {
-    return m_mapSprites;
+    return m_Sprites;
 }
 
 bool Assets::LoadConfig()
 {
     sol::state& lua = ScriptsManager::Get().state;
 
-    auto load_table = [](const sol::optional<sol::table>& optTable, const std::string& name, sol::table& tblTable)
+    auto load_table = [](const sol::optional<sol::table>& wrappedTable, const std::string& name, sol::table& table)
         {
-            if (!optTable)
+            if (!wrappedTable)
             {
                 logger::Error("Can't load table " + name);
                 return false;
             }
 
-            tblTable = optTable.value();
+            table = wrappedTable.value();
             return true;
         };
 
 #define INIT_TABLE(var, source, name) sol::table var; if (!load_table(source, name, var)) return false;
 
-    INIT_TABLE(tblAssets, lua["Assets"], "Assets");
-    INIT_TABLE(tblTiles, tblAssets["Tiles"], "Assets.Tiles");
-    INIT_TABLE(tblSprites, tblAssets["Sprites"], "Assets.Sprites");
-    INIT_TABLE(tblLevels, tblAssets["Levels"], "Assets.Levels");
-    INIT_TABLE(tblTileSize, tblTiles["Size"], "Assets.Tiles.Size");
-    INIT_TABLE(tblFileOffsets, tblTiles["FileOffsets"], "Assets.Tiles.FileOffsets");
+    INIT_TABLE(assetsTable, lua["Assets"], "Assets");
+    INIT_TABLE(tilesTable, assetsTable["Tiles"], "Assets.Tiles");
+    INIT_TABLE(spritesTable, assetsTable["Sprites"], "Assets.Sprites");
+    INIT_TABLE(levelsTable, assetsTable["Levels"], "Assets.Levels");
+    INIT_TABLE(tileSizeTable, tilesTable["Size"], "Assets.Tiles.Size");
+    INIT_TABLE(fileOffsetsTable, tilesTable["FileOffsets"], "Assets.Tiles.FileOffsets");
     
-    vTileSize.x = tblTileSize[1];
-    vTileSize.y = tblTileSize[2];
+    tileSize.x = tileSizeTable[1];
+    tileSize.y = tileSizeTable[2];
 
-    for (const auto& [objTileType, objCoords] : tblFileOffsets)
+    for (const auto& [tileTypeObj, coords] : fileOffsetsTable)
     {
-        TileType tile_type = objTileType.as<TileType>();
-        const sol::table& tblCoords = objCoords.as<sol::table>();
+        TileType tileType = tileTypeObj.as<TileType>();
+        const sol::table& tblCoords = coords.as<sol::table>();
 
-        mapSpriteFileOffsets[tile_type].x = tblCoords[1];
-        mapSpriteFileOffsets[tile_type].y = tblCoords[2];
+        spriteFileOffsets[tileType].x = tblCoords[1];
+        spriteFileOffsets[tileType].y = tblCoords[2];
     }
 
     Game& engine = Game::Get();
 
-    engine.vecLevels.resize(tblLevels.size());
+    auto& levels = engine.GetLevels();
 
-    for (const auto& [idx, objInfo] : tblLevels)
+    levels.resize(levelsTable.size());
+
+    for (const auto& [indexObj, infoObj] : levelsTable)
     {
-        const sol::table& tblInfo = objInfo.as<sol::table>();
+        const sol::table& info = infoObj.as<sol::table>();
 
-        INIT_TABLE(tblData, tblInfo["Data"], "Assets.Levels.<name>.Data");
-        INIT_TABLE(tblSize, tblInfo["Size"], "Assets.Levels.<name>.Size");
+        INIT_TABLE(dataTable, info["Data"], "Assets.Levels.<name>.Data");
+        INIT_TABLE(sizeTable, info["Size"], "Assets.Levels.<name>.Size");
 
-        def::vi2d vSize = { tblSize[1], tblSize[2] };
-        std::vector<TileType> vecTiles;
+        def::vi2d size = { sizeTable[1], sizeTable[2] };
+        std::vector<TileType> tiles;
 
-        for (int i = 0; i < vSize.x * vSize.y; i++)
-            vecTiles.push_back(TileType(tblData[i + 1].get<int>()));
+        for (int i = 0; i < size.x * size.y; i++)
+            tiles.push_back(TileType(dataTable[i + 1].get<int>()));
 
-        engine.vecLevels[idx.as<size_t>() - 1] = new Level(vecTiles, vSize);
+        levels[indexObj.as<size_t>() - 1] = new Level(tiles, size);
     }
 
-    engine.itCurrentLevel = engine.vecLevels.begin();
+    engine.GetCurrentLevel() = levels.begin();
 
-    for (const auto& [name, path] : tblSprites)
-        LoadSprite(name.as<std::string>(), new def::Graphic(path.as<std::string>()));
+    for (const auto& [nameObj, pathObj] : spritesTable)
+    {
+        LoadSprite(
+            nameObj.as<std::string>(),
+            new def::Graphic(pathObj.as<std::string>()));
+    }
 
     sol::protected_function initialise = lua["Initialise"];
-    if (initialise.valid()) initialise(); else return false;
+
+    if (!initialise.valid())
+        return false;
+        
+    initialise();
 
     return true;
 }
