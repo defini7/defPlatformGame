@@ -1,6 +1,6 @@
 #include "../Include/Game.hpp"
 
-void InitialiZe()
+void Initialise()
 {
 	auto& lua = ScriptsManager::Get().state;
 	lua.new_enum("TileType", "Empty", 0, "Coin", 1, "Grass", 2, "Dirt", 3);
@@ -26,7 +26,7 @@ void InitialiZe()
 
 int main()
 {
-	InitialiZe();
+	Initialise();
 
 	if (!ScriptsManager::Get().LoadScript("Assets/config.lua"))
 	{

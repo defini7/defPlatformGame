@@ -11,6 +11,7 @@
 #include "Dynamic.hpp"
 #include "Level.hpp"
 #include "ScriptsManager.hpp"
+#include "Snow.hpp"
 
 #include <unordered_map>
 #include <functional>

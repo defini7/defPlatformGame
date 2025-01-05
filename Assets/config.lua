@@ -101,7 +101,13 @@ Game = {
             Min = { -20, -100 },
             Max = { 20, 100 }
         }
+    },
+
+    Snow = {
+        Radius = 4,
+        Speed = 20
     }
+
 }
 
 function Initialise()

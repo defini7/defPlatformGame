@@ -43,6 +43,8 @@ void Game::DrawWorld()
 
     DrawTexture({ 0, 0 }, assets.GetSprite("Background")->texture);
 
+    Snow::Get().Draw();
+
     def::vi2d visibleTiles = GetScreenSize() / Assets::Get().tileSize;
 
     def::vf2d offset = (m_Player->model.pos - (def::vf2d)visibleTiles * 0.5f)
@@ -153,6 +155,8 @@ void Game::State_Game()
 
     dynamics.remove_if([](const Level::DynamicUnit& dynamic) { return dynamic.isRedundant; });
 
+    Snow::Get().Update(GetDeltaTime());
+
     DrawWorld();
     DrawInterface();
 }
@@ -188,8 +192,9 @@ bool Game::LoadConfig()
     INIT_TABLE(velocityTable, gameTable["Velocity"], "Game.Velocity");
     INIT_TABLE(velocityPlayerTable, velocityTable["Player"], "Game.Velocity.Player");
     INIT_TABLE(velocityEnemyTable, velocityTable["Enemy"], "Game.Velocity.Enemy");
+    INIT_TABLE(snowTable, gameTable["Snow"], "Game.Snow");
 
-    auto LoadVelocity = []<class T>(sol::table & table)
+    auto LoadVelocity = []<class T>(sol::table& table)
     {
         T::s_GroundSpeed = table["GroundSpeed"].get_or(15.0f);
         T::s_AirSpeed = table["AirSpeed"].get_or(17.5f);
@@ -203,6 +208,8 @@ bool Game::LoadConfig()
     LoadVelocity.template operator() < Dynamic_Enemy > (velocityEnemyTable);
 
     Dynamic::s_FallSpeed = velocityTable["FallSpeed"].get_or(20.0f);
+    Snow::s_FlakeRadius = snowTable["Radius"].get_or(4);
+    Snow::s_Speed = snowTable["Speed"].get_or(50.0f);
 
     auto GetVelocityVector = [&](sol::optional<sol::table> table, def::vf2d& vector)
         {

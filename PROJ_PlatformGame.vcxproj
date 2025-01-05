@@ -146,6 +146,7 @@
     <ClCompile Include="Sources\Logger.cpp" />
     <ClCompile Include="Sources\Main.cpp" />
     <ClCompile Include="Sources\ScriptsManager.cpp" />
+    <ClCompile Include="Sources\Snow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Assets.hpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="Include\Level.hpp" />
     <ClInclude Include="Include\Logger.hpp" />
     <ClInclude Include="Include\ScriptsManager.hpp" />
+    <ClInclude Include="Include\Snow.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
