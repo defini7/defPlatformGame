@@ -1,6 +1,10 @@
 #include "../Include/Snow.hpp"
 #include "../Include/Dynamic.hpp"
 
+// Here we just emulate the snow.
+// Everything has been stolen from
+// https://github.com/defini7/defGameEngine/blob/master/Examples/Snow.cpp
+
 float GetRandomFloat(float min, float max)
 {
     return (float)rand() / (float)RAND_MAX * (max - min) + min;
@@ -65,7 +69,7 @@ void Snow::Draw()
         int width = (float)s_FlakeRadius * col;
 
         Game::Get().FillTextureRectangle(
-            flake.pos + def::vf2d(flake.pos.x + cos(flake.time * flake.speed * 0.1f), 0.0f),
+            flake.pos + def::vf2d(flake.pos.x + cos(flake.time * flake.speed * 0.2f), 0.0f),
             { width, width }, def::Pixel(pixel, pixel, pixel)
         );
     }

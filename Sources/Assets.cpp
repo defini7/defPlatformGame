@@ -39,6 +39,7 @@ bool Assets::LoadConfig()
 
 #define INIT_TABLE(var, source, name) sol::table var; if (!load_table(source, name, var)) return false;
 
+    // Here we load all tables that we need to setup our game
     INIT_TABLE(assetsTable, lua["Assets"], "Assets");
     INIT_TABLE(tilesTable, assetsTable["Tiles"], "Assets.Tiles");
     INIT_TABLE(spritesTable, assetsTable["Sprites"], "Assets.Sprites");
@@ -46,9 +47,11 @@ bool Assets::LoadConfig()
     INIT_TABLE(tileSizeTable, tilesTable["Size"], "Assets.Tiles.Size");
     INIT_TABLE(fileOffsetsTable, tilesTable["FileOffsets"], "Assets.Tiles.FileOffsets");
     
+    // Getting the size of each tile in the game
     tileSize.x = tileSizeTable[1];
     tileSize.y = tileSizeTable[2];
 
+    // Getting offset of each tile in the file
     for (const auto& [tileTypeObj, coords] : fileOffsetsTable)
     {
         TileType tileType = tileTypeObj.as<TileType>();
@@ -58,8 +61,7 @@ bool Assets::LoadConfig()
         spriteFileOffsets[tileType].y = tblCoords[2];
     }
 
-    Game& engine = Game::Get();
-
+    auto& engine = Game::Get();
     auto& levels = engine.GetLevels();
 
     levels.resize(levelsTable.size());
@@ -68,6 +70,7 @@ bool Assets::LoadConfig()
     {
         const sol::table& info = infoObj.as<sol::table>();
 
+        // Getting size and content of each level
         INIT_TABLE(dataTable, info["Data"], "Assets.Levels.<name>.Data");
         INIT_TABLE(sizeTable, info["Size"], "Assets.Levels.<name>.Size");
 
@@ -80,6 +83,9 @@ bool Assets::LoadConfig()
         levels[indexObj.as<size_t>() - 1] = new Level(tiles, size);
     }
 
+#undef INIT_TABLE
+    
+    // So the first level in the game is the first loaded level in here
     engine.GetCurrentLevel() = levels.begin();
 
     for (const auto& [nameObj, pathObj] : spritesTable)
@@ -89,14 +95,11 @@ bool Assets::LoadConfig()
             new def::Graphic(pathObj.as<std::string>()));
     }
 
-    sol::protected_function initialise = lua["Initialise"];
-
-    if (!initialise.valid())
-        return false;
+    // In Initialise function we spawn enemies
+    sol::protected_function Initialise = lua["Initialise"];
+    if (!Initialise.valid()) return false;
         
-    initialise();
+    Initialise();
 
     return true;
 }
-
-#undef INIT_TABLE

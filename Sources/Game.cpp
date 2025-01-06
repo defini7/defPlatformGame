@@ -21,6 +21,15 @@ Game::~Game()
 
 bool Game::OnUserCreate()
 {
+    // The menu consists of the 3 options,
+    // each option is choosable by the ENTER key
+
+    Menu::Get().SetOptions({
+        { "Continue", [&]() { m_State = GameState::Game; } },
+        { "Credits", []() {} },
+        { "Exit", [&]() { m_IsRunning = false; } }
+    });
+
     LoadConfig();
 
     return true;
@@ -41,10 +50,13 @@ void Game::DrawWorld()
 {
     auto& assets = Assets::Get();
 
+    // In that mess first of all we draw the background
     DrawTexture({ 0, 0 }, assets.GetSprite("Background")->texture);
 
+    // now we draw snow
     Snow::Get().Draw();
 
+    // and here we prepare for drawing the tiles and dynamic objects
     def::vi2d visibleTiles = GetScreenSize() / Assets::Get().tileSize;
 
     def::vf2d offset = (m_Player->model.pos - (def::vf2d)visibleTiles * 0.5f)
@@ -55,6 +67,7 @@ void Game::DrawWorld()
 
     auto* tiles = assets.GetSprite("Tiles")->texture;
 
+    // Now we draw the tiles ...
     def::vi2d tile;
     for (tile.y = -1; tile.y <= visibleTiles.y; tile.y++)
         for (tile.x = -1; tile.x <= visibleTiles.x; tile.x++)
@@ -67,6 +80,7 @@ void Game::DrawWorld()
                 DrawPartialTexture(p, tiles, assets.spriteFileOffsets[tileType], Assets::Get().tileSize);
         }
 
+    // ... and here we draw the dynamic objects
     for (const auto& dynamic : (*m_CurrentLevel)->dynamics)
     {
         DrawPartialTexture(
@@ -79,74 +93,34 @@ void Game::DrawWorld()
 
 void Game::DrawInterface()
 {
+    // There is nothing except the score hublot
     DrawTextureString({ 2, 2 }, "Score: " + std::to_string(m_Score));
 }
 
 void Game::State_Menu()
 {
+    auto& menu = Menu::Get();
+
+    // If we press ESCAPE in the menu we get back to the game
     if (GetKey(def::Key::ESCAPE).pressed)
     {
-        m_MenuCursor = 0;
+        menu.ResetCursor();
         m_State = GameState::Game;
     }
 
-    std::unordered_map<std::string, size_t> options =
-    {
-        { "Continue", 0 },
-        { "Credits", 1 },
-        { "Exit", 2 }
-    };
-
-    std::vector<std::function<void()>> optionsActions =
-    {
-        [&]() { m_State = GameState::Game; },
-        [&]() {},
-        [&]() { m_IsRunning = false; }
-    };
-
-    if (GetKey(def::Key::UP).pressed || GetKey(def::Key::W).pressed)
-    {
-        m_MenuCursor--;
-
-        if (m_MenuCursor < 0)
-            m_MenuCursor = options.size() - 1;
-    }
-
-    if (GetKey(def::Key::DOWN).pressed || GetKey(def::Key::S).pressed)
-    {
-        m_MenuCursor++;
-
-        if (m_MenuCursor >= options.size())
-            m_MenuCursor = 0;
-    }
-
-    if (GetKey(def::Key::ENTER).pressed)
-        optionsActions[m_MenuCursor]();
-
-    ClearTexture(def::BLUE);
-
-    for (const auto& [optionName, optionIndex] : options)
-    {
-        def::vi2d offset = { 10, 20 + 12 * (int)optionIndex };
-
-        if (m_MenuCursor == optionIndex)
-        {
-            std::string pointer = "-> ";
-            DrawTextureString(offset, pointer);
-            offset.x += 10 * pointer.size();
-        }
-
-        DrawTextureString(offset, optionName, def::WHITE);
-    }
+    menu.Update();
+    menu.Draw();
 }
 
 void Game::State_Game()
 {
+    // If we press ESCAPE key we go to the menu
     if (GetKey(def::Key::ESCAPE).pressed)
         m_State = GameState::Menu;
 
     auto& dynamics = (*m_CurrentLevel)->dynamics;
 
+    // Update every dynamic object that still exists
     for (auto& dynamic : dynamics)
     {
         if (dynamic.dynamic)
@@ -186,32 +160,39 @@ bool Game::LoadConfig()
             return true;
         };
 
+    // Let's hope aligning won't get wrong
+
 #define INIT_TABLE(var, source, name) sol::table var; if (!LoadTable(source, name, var)) return false;
 
-    INIT_TABLE(gameTable, lua["Game"], "Game");
-    INIT_TABLE(velocityTable, gameTable["Velocity"], "Game.Velocity");
+    INIT_TABLE(gameTable,           lua["Game"],             "Game"                );
+    INIT_TABLE(velocityTable,       gameTable["Velocity"],   "Game.Velocity"       );
     INIT_TABLE(velocityPlayerTable, velocityTable["Player"], "Game.Velocity.Player");
-    INIT_TABLE(velocityEnemyTable, velocityTable["Enemy"], "Game.Velocity.Enemy");
-    INIT_TABLE(snowTable, gameTable["Snow"], "Game.Snow");
+    INIT_TABLE(velocityEnemyTable,  velocityTable["Enemy"],  "Game.Velocity.Enemy" );
+    INIT_TABLE(snowTable,           gameTable["Snow"],       "Game.Snow"           );
+
+#undef INIT_TABLE
+
+    // Next we use some magic constants, errrr... sorry
 
     auto LoadVelocity = []<class T>(sol::table& table)
-    {
-        T::s_GroundSpeed = table["GroundSpeed"].get_or(15.0f);
-        T::s_AirSpeed = table["AirSpeed"].get_or(17.5f);
-        T::s_JumpSpeed = table["JumpSpeed"].get_or(12.0f);
-    };
+        {
+            T::s_GroundSpeed = table["GroundSpeed"].get_or(15.0f);
+            T::s_AirSpeed = table["AirSpeed"].get_or(17.5f);
+            T::s_JumpSpeed = table["JumpSpeed"].get_or(12.0f);
+        };
 
     Dynamic::s_VelocityEpsilon = velocityTable["Epsilon"].get_or(1.0f);
     Dynamic::s_Friction = velocityTable["Friction"].get_or(4.0f);
-
-    LoadVelocity.template operator() < Dynamic_Player > (velocityPlayerTable);
-    LoadVelocity.template operator() < Dynamic_Enemy > (velocityEnemyTable);
-
     Dynamic::s_FallSpeed = velocityTable["FallSpeed"].get_or(20.0f);
+
+    // Pretty ugly but works!
+    LoadVelocity.template operator()<Dynamic_Player>(velocityPlayerTable);
+    LoadVelocity.template operator()<Dynamic_Enemy>(velocityEnemyTable);
+
     Snow::s_FlakeRadius = snowTable["Radius"].get_or(4);
     Snow::s_Speed = snowTable["Speed"].get_or(50.0f);
 
-    auto GetVelocityVector = [&](sol::optional<sol::table> table, def::vf2d& vector)
+    auto GetVector = [&](sol::optional<sol::table> table, def::vf2d& vector)
         {
             if (table)
             {
@@ -219,14 +200,29 @@ bool Game::LoadConfig()
 
                 vector.x = vectorTable[1];
                 vector.y = vectorTable[2];
+
+                return true;
             }
+
+            return false;
         };
 
-    GetVelocityVector(velocityEnemyTable["Min"].get<sol::optional<sol::table>>(), Dynamic_Enemy::s_MinVelocity);
-    GetVelocityVector(velocityEnemyTable["Max"].get<sol::optional<sol::table>>(), Dynamic_Enemy::s_MaxVelocity);
+    auto GetVelocityVector = [&](sol::table& table, def::vf2d& vectorMin, def::vf2d& vectorMax)
+        {
+            sol::optional<sol::table> unwrappedMin = table["Min"];
+            sol::optional<sol::table> unwrappedMax = table["Max"];
 
-    GetVelocityVector(velocityPlayerTable["Min"].get<sol::optional<sol::table>>(), Dynamic_Player::s_MinVelocity);
-    GetVelocityVector(velocityPlayerTable["Max"].get<sol::optional<sol::table>>(), Dynamic_Player::s_MaxVelocity);
+            if (!GetVector(unwrappedMin, vectorMin)) return false;
+            if (!GetVector(unwrappedMax, vectorMax)) return false;
+            
+            return true;
+        };
+
+    if (!GetVelocityVector(velocityEnemyTable, Dynamic_Enemy::s_MinVelocity, Dynamic_Enemy::s_MaxVelocity))
+        return false;
+
+    if (!GetVelocityVector(velocityPlayerTable, Dynamic_Player::s_MinVelocity, Dynamic_Player::s_MaxVelocity))
+        return false;
 
     return true;
 }

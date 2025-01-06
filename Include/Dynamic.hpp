@@ -41,6 +41,11 @@ public:
     inline static float s_Friction = 0.0f;
     inline static float s_FallSpeed = 0.0f;
     
+    // There exists 2 models:
+    // 1) the basic rectangle
+    // 2) just 4 lines that represent rectangle without borders
+    //      so now it's easier to handle collision
+
     def::rect<float> model;
     def::line<float> edgelessModel[4];
 

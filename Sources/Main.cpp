@@ -2,6 +2,8 @@
 
 void Initialise()
 {
+	// Here we are loading some enums and functions to the Lua
+
 	auto& lua = ScriptsManager::Get().state;
 	lua.new_enum("TileType", "Empty", 0, "Coin", 1, "Grass", 2, "Dirt", 3);
 

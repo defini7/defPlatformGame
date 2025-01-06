@@ -2,7 +2,9 @@
 
 ScriptsManager::ScriptsManager()
 {
-	state.open_libraries(sol::lib::base, sol::lib::io, sol::lib::math, sol::lib::table, sol::lib::string);
+	// loading some basic lua libraries, i'm not sure which we will use so load
+	// basic ones except math
+	state.open_libraries(sol::lib::base, sol::lib::io, sol::lib::table, sol::lib::string);
 }
 
 ScriptsManager& ScriptsManager::Get()

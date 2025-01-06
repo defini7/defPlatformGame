@@ -76,7 +76,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(GLFW_PATH)\include; $(LUA_PATH)\src; $(STB_PATH)\; $(SOL2_PATH)\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -93,7 +93,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(GLFW_PATH)\include; $(LUA_PATH)\src; $(STB_PATH)\; $(SOL2_PATH)\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -110,7 +110,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(GLFW_PATH)\include; $(LUA_PATH)\src; $(STB_PATH)\; $(SOL2_PATH)\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -127,7 +127,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(GLFW_PATH)\include; $(LUA_PATH)\src; $(STB_PATH)\; $(SOL2_PATH)\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -145,6 +145,7 @@
     <ClCompile Include="Sources\Level.cpp" />
     <ClCompile Include="Sources\Logger.cpp" />
     <ClCompile Include="Sources\Main.cpp" />
+    <ClCompile Include="Sources\Menu.cpp" />
     <ClCompile Include="Sources\ScriptsManager.cpp" />
     <ClCompile Include="Sources\Snow.cpp" />
   </ItemGroup>
@@ -156,6 +157,7 @@
     <ClInclude Include="Include\Game.hpp" />
     <ClInclude Include="Include\Level.hpp" />
     <ClInclude Include="Include\Logger.hpp" />
+    <ClInclude Include="Include\Menu.hpp" />
     <ClInclude Include="Include\ScriptsManager.hpp" />
     <ClInclude Include="Include\Snow.hpp" />
   </ItemGroup>

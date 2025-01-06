@@ -12,6 +12,7 @@
 #include "Level.hpp"
 #include "ScriptsManager.hpp"
 #include "Snow.hpp"
+#include "Menu.hpp"
 
 #include <unordered_map>
 #include <functional>
@@ -24,6 +25,7 @@ enum class GameState
 };
 
 class Dynamic;
+class Menu;
 
 class Game : public def::GameEngine
 {
@@ -65,7 +67,6 @@ private:
     bool m_IsRunning = true;
 
     int m_Score = 0;
-	int m_MenuCursor = 0;
 
     std::vector<Level*> m_Levels;
     std::vector<Level*>::iterator m_CurrentLevel;

@@ -8,6 +8,7 @@ Level::Level(const std::vector<TileType>& map, const def::vi2d& size)
 void Level::Create(const def::vi2d& size)
 {
     m_Size = size;
+
     m_Data.clear();
     m_Data.resize(size.x * size.y);
 }
