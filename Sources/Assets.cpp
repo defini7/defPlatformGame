@@ -74,7 +74,7 @@ bool Assets::LoadConfig()
         INIT_TABLE(dataTable, info["Data"], "Assets.Levels.<name>.Data");
         INIT_TABLE(sizeTable, info["Size"], "Assets.Levels.<name>.Size");
 
-        def::vi2d size = { sizeTable[1], sizeTable[2] };
+        def::Vector2i size = { sizeTable[1], sizeTable[2] };
         std::vector<TileType> tiles;
 
         for (int i = 0; i < size.x * size.y; i++)

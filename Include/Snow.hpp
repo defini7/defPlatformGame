@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SNOW_HPP
+#define SNOW_HPP
 
 #include "defGeometry2D.hpp"
 
@@ -38,3 +39,5 @@ private:
     std::list<Flake> m_Flakes;
     
 };
+
+#endif

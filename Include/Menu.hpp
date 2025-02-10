@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MENU_HPP
+#define MENU_HPP
 
 #include <unordered_map>
 #include <string>
@@ -11,12 +12,12 @@ class Game;
 class Menu
 {
 public:
-    Menu(Menu&& const) = delete;
+    Menu(Menu&&) = delete;
     void operator=(Menu const&) = delete;
 
     static Menu& Get();
 
-    void SetOptions(const std::unordered_map<std::string, std::function<void()>>& options);
+    void SetOptions(const std::list<std::pair<std::string, std::function<void()>>>& options);
     
     void ResetCursor(const size_t& value = 0);
     void MoveCursorForward();
@@ -39,3 +40,5 @@ private:
     size_t m_Cursor = 0;
 
 };
+
+#endif

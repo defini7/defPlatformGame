@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ASSETS_HPP
+#define ASSETS_HPP
 
 #include <unordered_map>
 #include <string>
@@ -26,8 +27,8 @@ public:
 
     bool LoadConfig();
     
-    std::unordered_map<TileType, def::vi2d> spriteFileOffsets;
-    def::vi2d tileSize;
+    std::unordered_map<TileType, def::Vector2i> spriteFileOffsets;
+    def::Vector2i tileSize;
 
 private:
     Assets() = default;
@@ -37,3 +38,5 @@ private:
     std::unordered_map<std::string, Level*> m_Levels;
 
 };
+
+#endif

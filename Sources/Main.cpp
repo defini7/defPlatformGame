@@ -30,9 +30,9 @@ int main()
 {
 	Initialise();
 
-	if (!ScriptsManager::Get().LoadScript("Assets/config.lua"))
+	if (!ScriptsManager::Get().LoadScript("../../Assets/config.lua"))
 	{
-		logger::Error("Can't load Assets/config.lua file");
+		logger::Error("Can't load ../../Assets/config.lua file");
 		return 1;
 	}
 
@@ -54,7 +54,8 @@ int main()
 		windowTable["ScreenWidth"].get_or(256),
 		windowTable["ScreenHeight"].get_or(192),
 		windowTable["PixelWidth"].get_or(4),
-		windowTable["PixelHeight"].get_or(4)
+		windowTable["PixelHeight"].get_or(4),
+		false, true
 	);
 
 	game.Run();

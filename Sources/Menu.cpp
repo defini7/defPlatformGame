@@ -6,7 +6,7 @@ Menu& Menu::Get()
     return menu;
 }
 
-void Menu::SetOptions(const std::unordered_map<std::string, std::function<void()>>& options)
+void Menu::SetOptions(const std::list<std::pair<std::string, std::function<void()>>>& options)
 {
     m_OptionsActions.resize(options.size());
 
@@ -71,7 +71,7 @@ void Menu::Draw()
     // and highlight the picked one
     for (const auto& [name, index] : m_Options)
     {
-        def::vi2d offset = { 10, 20 + 12 * (int)index };
+        def::Vector2i offset = { 10, 20 + 12 * (int)index };
 
         if (m_Cursor == index)
         {

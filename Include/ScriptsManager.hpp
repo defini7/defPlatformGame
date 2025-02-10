@@ -1,9 +1,8 @@
-#pragma once
+#ifndef SCRIPTS_MANAGER_HPP
+#define SCRIPTS_MANAGER_HPP
 
 #define SOL_ALL_SAFETIES_ON 1
 #include "sol/sol.hpp"
-
-#pragma comment(lib, "lua547.lib")
 
 #include "Logger.hpp"
 
@@ -25,3 +24,5 @@ public:
 	sol::state state;
 
 };
+
+#endif

@@ -1,8 +1,6 @@
-#pragma once
+#ifndef GAME_HPP
+#define GAME_HPP
 
-#pragma warning(disable : 4996)
-#include "stb/stb_image.h"
-#include "stb/stb_image_write.h"
 #include "defGeometry2D.hpp"
 #include "defGameEngine.hpp"
 
@@ -74,3 +72,5 @@ private:
     Dynamic* m_Player;
 
 };
+
+#endif

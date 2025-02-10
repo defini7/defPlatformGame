@@ -69,7 +69,7 @@ void Snow::Draw()
         int width = (float)s_FlakeRadius * col;
 
         Game::Get().FillTextureRectangle(
-            flake.pos + def::vf2d(flake.pos.x + cos(flake.time * flake.speed * 0.2f), 0.0f),
+            def::Vector2f(flake.pos.x + flake.pos.x + cos(flake.time * flake.speed * 0.2f), flake.pos.y),
             { width, width }, def::Pixel(pixel, pixel, pixel)
         );
     }

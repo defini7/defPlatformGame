@@ -1,9 +1,9 @@
 #define DEF_GEOMETRY2D_IMPL
 #include "../Include/Dynamic.hpp"
 
-Dynamic::Dynamic(const def::vf2d& pos, const def::vf2d& size)
+Dynamic::Dynamic(const def::Vector2f& pos, const def::Vector2f& size)
 {
-    model.size = size;
+    model.size = { size.x, size.y };
     SetPosition(pos);
 }
 
@@ -37,9 +37,9 @@ void Dynamic::Update()
     UpdateCollision(sides);
 }
 
-void Dynamic::SetPosition(const def::vf2d& pos)
+void Dynamic::SetPosition(const def::Vector2f& pos)
 {
-    model.pos = pos;
+    model.pos = { pos.x, pos.y };
 
     // Recalculating position of each line for
     // the edge model of the object, you can read about
@@ -65,15 +65,19 @@ void Dynamic::SetPosition(const def::vf2d& pos)
     edgelessModel[3].end = { pos.x + model.size.x - ix, pos.y + model.size.y };
 }
 
-void Dynamic::OffsetPosition(const def::vf2d& offset)
+void Dynamic::OffsetPosition(const def::Vector2f& offset)
 {
-    model.pos += offset;
+    model.pos.x += offset.x;
+    model.pos.y += offset.y;
 
     // Also offset our edgeless model
     for (uint8_t i = 0; i < 4; i++)
     {
-        edgelessModel[i].start += offset;
-        edgelessModel[i].end += offset;
+        edgelessModel[i].start.x += offset.x;
+        edgelessModel[i].start.y += offset.y;
+        
+        edgelessModel[i].end.x += offset.x;
+        edgelessModel[i].end.y += offset.y;
     }
 }
 
@@ -99,7 +103,7 @@ void Dynamic::SwitchFrame(const float period)
 
 
 
-Dynamic_Creature::Dynamic_Creature(const def::vf2d& pos, const def::vf2d& size)
+Dynamic_Creature::Dynamic_Creature(const def::Vector2f& pos, const def::Vector2f& size)
     : Dynamic(pos, size)
 {
 }
@@ -111,7 +115,9 @@ void Dynamic_Creature::UpdateControls()
 void Dynamic_Creature::UpdateCollision(std::list<def::side>& sides)
 {
     // Calculate possible position of the creature
-    def::vf2d newPos = model.pos + velocity * Game::Get().GetDeltaTime();
+    def::Vector2f newPos = velocity * Game::Get().GetDeltaTime();
+    newPos.x += model.pos.x;
+    newPos.y += model.pos.y;
 
     Level* level = *Game::Get().GetCurrentLevel();
 
@@ -133,7 +139,7 @@ void Dynamic_Creature::UpdateCollision(std::list<def::side>& sides)
         UNSET_STATE(state, State::Right);
 
         // Check if we can go through the tile ...
-        if (!Go(level->GetTile(def::vi2d(newPos.x, model.pos.y))) || !Go(level->GetTile(def::vi2d(newPos.x, model.pos.y + model.size.y - 0.1f))))
+        if (!Go(level->GetTile(def::Vector2i(newPos.x, model.pos.y))) || !Go(level->GetTile(def::Vector2i(newPos.x, model.pos.y + model.size.y - 0.1f))))
         {
             // ... if we can't then indicate that we pushed something by our left side
             newPos.x = floor(newPos.x) + model.size.x;
@@ -147,7 +153,7 @@ void Dynamic_Creature::UpdateCollision(std::list<def::side>& sides)
         UNSET_STATE(state, State::Left);
 
         // The same checking as before ...
-        if (!Go(level->GetTile(def::vi2d(newPos.x + model.size.x, model.pos.y))) || !Go(level->GetTile(def::vi2d(newPos.x + model.size.x, model.pos.y + model.size.y - 0.1f))))
+        if (!Go(level->GetTile(def::Vector2i(newPos.x + model.size.x, model.pos.y))) || !Go(level->GetTile(def::Vector2i(newPos.x + model.size.x, model.pos.y + model.size.y - 0.1f))))
         {
             // ...and the same here but now we touch by our right side
             newPos.x = floor(newPos.x);
@@ -159,7 +165,7 @@ void Dynamic_Creature::UpdateCollision(std::list<def::side>& sides)
     // The same as before applies for ordinate
     if (velocity.y < 0.0f)
     {
-        if (!Go(level->GetTile(newPos)) || !Go(level->GetTile(newPos + def::vf2d(model.size.x - 0.1f, 0.0f))))
+        if (!Go(level->GetTile(newPos)) || !Go(level->GetTile(newPos + def::Vector2f(model.size.x - 0.1f, 0.0f))))
         {
             newPos.y = floor(newPos.y) + model.size.y;
             sides.push_back(def::SIDE_BOTTOM);
@@ -168,7 +174,7 @@ void Dynamic_Creature::UpdateCollision(std::list<def::side>& sides)
     }
     else if (velocity.y > 0.0f)
     {
-        if (!Go(level->GetTile(newPos + def::vf2d(0.0f, 1.0f))) || !Go(level->GetTile(newPos + def::vf2d(model.size.x - 0.1f, model.size.y))))
+        if (!Go(level->GetTile(newPos + def::Vector2f(0.0f, 1.0f))) || !Go(level->GetTile(newPos + def::Vector2f(model.size.x - 0.1f, model.size.y))))
         {
             newPos.y = floor(newPos.y);
             sides.push_back(def::SIDE_TOP);
@@ -198,7 +204,7 @@ void Dynamic_Creature::ApplyGravity()
 
 
 
-Dynamic_Player::Dynamic_Player(const def::vf2d& pos)
+Dynamic_Player::Dynamic_Player(const def::Vector2f& pos)
     : Dynamic_Creature(pos, { 1.0f, 1.0f })
 {
 }
@@ -238,18 +244,20 @@ void Dynamic_Player::UpdateCollision(std::list<def::side>& sides)
     Level* level = *levelIterator;
 
     // Clamp the velocity so the player can't reach very high speed
-    velocity = velocity.max(s_MinVelocity).min(s_MaxVelocity);
+    velocity = velocity.Max(s_MinVelocity).Min(s_MaxVelocity);
 
     // Calculate next possible position of the player
-    def::vf2d newPos = model.pos + velocity * engine.GetDeltaTime();
+    def::Vector2f newPos = velocity * Game::Get().GetDeltaTime();
+    newPos.x += model.pos.x;
+    newPos.y += model.pos.y;
 
     // Check for collision with tiles
 
-    std::list<def::vf2d> listNewPos =
+    std::list<def::Vector2f> listNewPos =
     {
         newPos,
-        newPos + def::vf2d(0.0f, 1.0f),
-        newPos + def::vf2d(1.0f, 0.0f),
+        newPos + def::Vector2f(0.0f, 1.0f),
+        newPos + def::Vector2f(1.0f, 0.0f),
         newPos + 1.0f
     };
 
@@ -348,7 +356,7 @@ void Dynamic_Player::UpdateCollision(std::list<def::side>& sides)
     {
         if (levelIterator == levels.begin())
         {
-            SetPosition({ floor(model.pos.x) + 1.0f, model.pos.y });
+            SetPosition({ floorf(model.pos.x) + 1.0f, model.pos.y });
             velocity.x = 0.0f;
         }
         else
@@ -370,7 +378,7 @@ void Dynamic_Player::UpdateCollision(std::list<def::side>& sides)
     {
         if (levelIterator == levels.end() - 1)
         {
-            SetPosition({ floor(model.pos.x), model.pos.y });
+            SetPosition({ floorf(model.pos.x), model.pos.y });
             velocity.x = 0.0f;
         }
         else
@@ -420,7 +428,7 @@ bool Dynamic_Player::OnEnemyTouch(Dynamic_Enemy* enemy, def::side side)
 
 
 
-Dynamic_Enemy::Dynamic_Enemy(const def::vf2d& pos, const def::vf2d& size)
+Dynamic_Enemy::Dynamic_Enemy(const def::Vector2f& pos, const def::Vector2f& size)
     : Dynamic_Creature(pos, size)
 {
 }
@@ -445,7 +453,7 @@ void Dynamic_Enemy::UpdateControls()
 
 void Dynamic_Enemy::UpdateCollision(std::list<def::side>& sides)
 {
-    velocity = velocity.max(s_MinVelocity).min(s_MaxVelocity);
+    velocity = velocity.Max(s_MinVelocity).Min(s_MaxVelocity);
 
     Dynamic_Creature::UpdateCollision(sides);
 
@@ -482,7 +490,7 @@ bool Dynamic_Enemy::OnSideTouch(const def::side nSide)
     return false;
 }
 
-Dynamic_Enemy_Mushroom::Dynamic_Enemy_Mushroom(const def::vf2d& pos)
+Dynamic_Enemy_Mushroom::Dynamic_Enemy_Mushroom(const def::Vector2f& pos)
     : Dynamic_Enemy(pos, { 1.0f, 1.0f })
 {
     graphicsID.y = 3;
@@ -503,7 +511,7 @@ void Dynamic_Enemy_Mushroom::SwitchFrame(const float period)
     Dynamic_Enemy::SwitchFrame(period);
 }
 
-Dynamic_Enemy_Turtle::Dynamic_Enemy_Turtle(const def::vf2d& pos)
+Dynamic_Enemy_Turtle::Dynamic_Enemy_Turtle(const def::Vector2f& pos)
     : Dynamic_Enemy(pos, { 1.0f, 2.0f })
 {
     model.size = { 1.0f, 2.0f };

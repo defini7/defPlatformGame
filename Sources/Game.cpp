@@ -1,5 +1,3 @@
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #define DGE_APPLICATION
 #include "../Include/Game.hpp"
 
@@ -57,24 +55,24 @@ void Game::DrawWorld()
     Snow::Get().Draw();
 
     // and here we prepare for drawing the tiles and dynamic objects
-    def::vi2d visibleTiles = GetScreenSize() / Assets::Get().tileSize;
+    def::Vector2i visibleTiles = GetScreenSize() / Assets::Get().tileSize;
 
-    def::vf2d offset = (m_Player->model.pos - (def::vf2d)visibleTiles * 0.5f)
-        .max({ 0.0f, 0.0f })
-        .min((*m_CurrentLevel)->GetSize() - visibleTiles);
+    def::Vector2f offset = (def::Vector2f(m_Player->model.pos.x, m_Player->model.pos.y) - visibleTiles * 0.5f)
+        .Max({ 0.0f, 0.0f })
+        .Min((*m_CurrentLevel)->GetSize() - visibleTiles);
 
-    def::vf2d tileOffset = (offset - offset.floor()) * Assets::Get().tileSize;
+    def::Vector2f tileOffset = (offset - offset.Floor()) * Assets::Get().tileSize;
 
     auto* tiles = assets.GetSprite("Tiles")->texture;
 
     // Now we draw the tiles ...
-    def::vi2d tile;
+    def::Vector2i tile;
     for (tile.y = -1; tile.y <= visibleTiles.y; tile.y++)
         for (tile.x = -1; tile.x <= visibleTiles.x; tile.x++)
         {
-            TileType tileType = (*m_CurrentLevel)->GetTile(tile + (def::vi2d)offset);
+            TileType tileType = (*m_CurrentLevel)->GetTile(tile + (def::Vector2i)offset);
 
-            def::vi2d p = tile * Assets::Get().tileSize - tileOffset;
+            def::Vector2i p = tile * Assets::Get().tileSize - tileOffset;
 
             if (tileType != TileType::Empty)
                 DrawPartialTexture(p, tiles, assets.spriteFileOffsets[tileType], Assets::Get().tileSize);
@@ -84,10 +82,10 @@ void Game::DrawWorld()
     for (const auto& dynamic : (*m_CurrentLevel)->dynamics)
     {
         DrawPartialTexture(
-            (dynamic.dynamic->model.pos - offset) * Assets::Get().tileSize,
+            (def::Vector2f(dynamic.dynamic->model.pos.x, dynamic.dynamic->model.pos.y) - offset) * Assets::Get().tileSize,
             tiles,
             Assets::Get().tileSize * dynamic.dynamic->graphicsID,
-            dynamic.dynamic->model.size * Assets::Get().tileSize);
+            def::Vector2f(dynamic.dynamic->model.size.x, dynamic.dynamic->model.size.y)  * Assets::Get().tileSize);
     }
 }
 
@@ -192,7 +190,7 @@ bool Game::LoadConfig()
     Snow::s_FlakeRadius = snowTable["Radius"].get_or(4);
     Snow::s_Speed = snowTable["Speed"].get_or(50.0f);
 
-    auto GetVector = [&](sol::optional<sol::table> table, def::vf2d& vector)
+    auto GetVector = [&](sol::optional<sol::table> table, def::Vector2f& vector)
         {
             if (table)
             {
@@ -207,7 +205,7 @@ bool Game::LoadConfig()
             return false;
         };
 
-    auto GetVelocityVector = [&](sol::table& table, def::vf2d& vectorMin, def::vf2d& vectorMax)
+    auto GetVelocityVector = [&](sol::table& table, def::Vector2f& vectorMin, def::Vector2f& vectorMax)
         {
             sol::optional<sol::table> unwrappedMin = table["Min"];
             sol::optional<sol::table> unwrappedMax = table["Max"];

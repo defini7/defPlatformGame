@@ -313,7 +313,7 @@ namespace def
 	template <class T1, class T2>
 	constexpr bool contains(const rect<T1>& r, const line<T2>& l);
 
-	// Checks if r contains Ò
+	// Checks if r contains —Å
 	template <class T1, class T2>
 	constexpr bool contains(const rect<T1>& r, const circle<T2>& c);
 
@@ -1012,7 +1012,7 @@ namespace def
 		{
 			if (contains(r.side(i), p))
 			{
-				if (s) *s = i;
+				if (s) *s = side(i);
 				intersections.push_back(p);
 				return true;
 			}
@@ -1044,7 +1044,7 @@ namespace def
 			}
 
 			if (intersected)
-				if (s) s->push_back(def::side(i));
+				if (s) s->push_back(side(i));
 		}
 
 		return !intersections.empty();
@@ -1118,7 +1118,7 @@ namespace def
 
 			if (!points.empty())
 			{
-				if (s) s->push_back(i);
+				if (s) s->push_back(side(i));
 				intersections.push_back(points[0]);
 			}
 		}
@@ -1218,7 +1218,7 @@ namespace def
 		{
 			for (const auto& p : intersects(c, r.side(i)))
 			{
-				if (s) s->push_back(i);
+				if (s) s->push_back(side(i));
 				intersections.push_back(p);
 			}
 		}

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LOGGER_HPP
+#define LOGGER_HPP
 
 #include <string>
 #include <iostream>
@@ -11,3 +12,5 @@ namespace logger
 	void Warn(const std::string& text, std::ostream& os = std::cout);
 	void Error(const std::string& text, std::ostream& os = std::cout);
 }
+
+#endif

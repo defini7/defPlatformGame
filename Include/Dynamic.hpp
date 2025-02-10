@@ -1,4 +1,7 @@
-#pragma once
+#ifndef DYNAMIC_HPP
+#define DYNAMIC_HPP
+
+#include <list>
 
 #include "Game.hpp"
 
@@ -22,12 +25,12 @@ public:
 
 public:
     Dynamic() = default;
-    Dynamic(const def::vf2d& pos, const def::vf2d& size);
+    Dynamic(const def::Vector2f& pos, const def::Vector2f& size);
 
     void Update();
 
-    void SetPosition(const def::vf2d& pos);
-    void OffsetPosition(const def::vf2d& offset);
+    void SetPosition(const def::Vector2f& pos);
+    void OffsetPosition(const def::Vector2f& offset);
 
 public:
     virtual void UpdateControls();
@@ -49,9 +52,9 @@ public:
     def::rect<float> model;
     def::line<float> edgelessModel[4];
 
-    def::vf2d velocity;
+    def::Vector2f velocity;
 
-    def::vi2d graphicsID;
+    def::Vector2i graphicsID;
 
     uint64_t state = State::Left;
     int frameCounter = 0;
@@ -67,7 +70,7 @@ class Dynamic_Creature : public Dynamic
 {
 public:
     Dynamic_Creature() = default;
-    Dynamic_Creature(const def::vf2d& pos, const def::vf2d& size);
+    Dynamic_Creature(const def::Vector2f& pos, const def::Vector2f& size);
 
 public:
     void UpdateControls() override;
@@ -82,7 +85,7 @@ class Dynamic_Player : public Dynamic_Creature
 {
 public:
     Dynamic_Player() = default;
-    Dynamic_Player(const def::vf2d& pos);
+    Dynamic_Player(const def::Vector2f& pos);
 
 public:
     void UpdateControls() override;
@@ -96,8 +99,8 @@ public:
     static float s_AirSpeed;
     static float s_JumpSpeed;
 
-    inline static def::vf2d s_MinVelocity;
-    inline static def::vf2d s_MaxVelocity;
+    inline static def::Vector2f s_MinVelocity;
+    inline static def::Vector2f s_MaxVelocity;
 
 };
 
@@ -105,7 +108,7 @@ class Dynamic_Enemy : public Dynamic_Creature
 {
 public:
     Dynamic_Enemy() = default;
-    Dynamic_Enemy(const def::vf2d& pos, const def::vf2d& size);
+    Dynamic_Enemy(const def::Vector2f& pos, const def::Vector2f& size);
 
 public:
     void UpdateControls() override;
@@ -120,15 +123,15 @@ public:
     static float s_AirSpeed;
     static float s_JumpSpeed;
 
-    inline static def::vf2d s_MinVelocity;
-    inline static def::vf2d s_MaxVelocity;
+    inline static def::Vector2f s_MinVelocity;
+    inline static def::Vector2f s_MaxVelocity;
 
 };
 
 class Dynamic_Enemy_Mushroom : public Dynamic_Enemy
 {
 public:
-    Dynamic_Enemy_Mushroom(const def::vf2d& pos);
+    Dynamic_Enemy_Mushroom(const def::Vector2f& pos);
 
 public:
     bool OnHit() override;
@@ -146,7 +149,7 @@ public:
         Shell
     } turtleState = TurtleState::Walk;
 
-    Dynamic_Enemy_Turtle(const def::vf2d& pos);
+    Dynamic_Enemy_Turtle(const def::Vector2f& pos);
 
 public:
     bool OnHit() override;
@@ -154,3 +157,5 @@ public:
 
     void SwitchFrame(const float period) override;
 };
+
+#endif
