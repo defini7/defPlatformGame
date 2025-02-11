@@ -54,8 +54,7 @@ int main()
 		windowTable["ScreenWidth"].get_or(256),
 		windowTable["ScreenHeight"].get_or(192),
 		windowTable["PixelWidth"].get_or(4),
-		windowTable["PixelHeight"].get_or(4),
-		false, true
+		windowTable["PixelHeight"].get_or(4)
 	);
 
 	game.Run();

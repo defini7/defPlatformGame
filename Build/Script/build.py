@@ -13,6 +13,10 @@ if OS == 'Windows':
     SOL_INCLUDE = 'C:/SDK/sol2/include'
     LUA_PATH = 'C:/SDK/lua547/src'
 
+elif OS == 'Linux':
+    SOL_INCLUDE = '../../../sol2/include'
+    LUA_PATH = '/usr/include/lua5.4'
+
 
 def construct_engine_sources() -> list[str]:
     return [file_name for file_name in get_files(f'{DGE_PATH}/Sources/')]
@@ -41,11 +45,12 @@ def main():
     for target in get_files('../../Sources'):
         c.add_argument(f'../../Sources/{target}')
 
+    c.add_flag(f'I"{LUA_PATH}"')
+    c.add_flag(f'I"{SOL_INCLUDE}"')
+
     match OS:
         case 'Windows':
             c.add_flag(f'I"{STB_INCLUDE}"')
-            c.add_flag(f'I"{SOL_INCLUDE}"')
-            c.add_flag(f'I"{LUA_PATH}"')
             c.add_flag(f'I"{GLFW_INCLUDE}"')
             c.add_flag(f'L"{GLFW_LIB}"')
             c.add_flag(f'L"{LUA_PATH}"')
@@ -71,7 +76,7 @@ def main():
             c.add_flag('lXinerama')
             c.add_flag('lXcursor')
             c.add_flag('lstb')
-            c.add_flag('llua')
+            c.add_flag('llua5.4')
         case _:
             assert False, 'The builder is not implemeneted for your OS, please send an issue'
 
