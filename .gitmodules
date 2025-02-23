@@ -1,0 +1,13 @@
+[submodule "Engine/Vendor/glfw"]
+	path = Engine/Vendor/glfw
+	url = https://github.com/defGameEngine/glfw
+[submodule "Game/Vendor/defGeometry2D"]
+	path = Game/Vendor/defGeometry2D
+	url = https://github.com/defini7/defGeometry2D
+[submodule "Game/Vendor/sol2"]
+	path = Game/Vendor/sol2
+	url = https://github.com/defini7/sol2
+[submodule "Game/Vendor/lua"]
+	path = Game/Vendor/lua
+	url = https://github.com/defini7/lua.git
+	branch = v5.4

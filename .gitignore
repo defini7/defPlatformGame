@@ -1,2 +1,5 @@
-Build/Target
-Build/Script/__pycache__
+Build/*
+Engine/*.vcxproj*
+Game/*.vcxproj*
+*.sln
+.vs
