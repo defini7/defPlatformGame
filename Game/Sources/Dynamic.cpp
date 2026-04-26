@@ -1,3 +1,9 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #define DEF_GEOMETRY2D_IMPL
 #include "../Include/Dynamic.hpp"
 
@@ -218,17 +224,17 @@ void Dynamic_Player::UpdateControls()
     Game& engine = Game::Get();
     float fDeltaTime = engine.GetDeltaTime();
 
-    if (engine.GetWindow()->IsFocused())
+    if (engine.Window().IsFocused())
     {
-        if (engine.GetInput()->GetKeyState(def::Key::LEFT).held || engine.GetInput()->GetKeyState(def::Key::A).held)
+        if (engine.Input().GetKeyState(def::Key::LEFT).held || engine.Input().GetKeyState(def::Key::A).held)
             velocity.x += (IS_STATE_SET(state, State::Jump) ? -s_AirSpeed : -s_GroundSpeed) * fDeltaTime;
 
-        if (engine.GetInput()->GetKeyState(def::Key::RIGHT).held || engine.GetInput()->GetKeyState(def::Key::D).held)
+        if (engine.Input().GetKeyState(def::Key::RIGHT).held || engine.Input().GetKeyState(def::Key::D).held)
             velocity.x += (IS_STATE_SET(state, State::Jump) ? s_AirSpeed : s_GroundSpeed) * fDeltaTime;
 
-        if (engine.GetInput()->GetKeyState(def::Key::SPACE).pressed ||
-            engine.GetInput()->GetKeyState(def::Key::UP).pressed ||
-            engine.GetInput()->GetKeyState(def::Key::W).pressed)
+        if (engine.Input().GetKeyState(def::Key::SPACE).pressed ||
+            engine.Input().GetKeyState(def::Key::UP).pressed ||
+            engine.Input().GetKeyState(def::Key::W).pressed)
         {
             if (velocity.y == 0.0f) velocity.y = -s_JumpSpeed;
             SET_STATE(state, State::Jump);
@@ -485,7 +491,7 @@ bool Dynamic_Enemy::OnHit()
     return true;
 }
 
-bool Dynamic_Enemy::OnSideTouch(const def::side nSide)
+bool Dynamic_Enemy::OnSideTouch(const def::side side)
 {
     return false;
 }

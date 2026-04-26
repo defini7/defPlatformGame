@@ -1,7 +1,16 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #pragma once
 
 #ifndef DEF_GAME_ENGINE_HPP
 #define DEF_GAME_ENGINE_HPP
+
+#pragma warning(disable : 4068) // unknown pragmas
+#pragma warning(disable : 4201) // anonymous structs
 
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 
@@ -44,10 +53,6 @@
 #include "Texture.hpp"
 #include "Graphic.hpp"
 
-#ifdef DGE_PLATFORM_GL
-#include "PlatformGL.hpp"
-#endif
-
 #ifdef DGE_PLATFORM_GLFW3
 #include "PlatformGLFW3.hpp"
 #endif
@@ -63,14 +68,21 @@
 
 namespace def
 {
+	using TimePoint = std::chrono::system_clock::time_point;
+
 	class Platform;
 	class Console;
+	struct Layer;
 
+	// This is the main class of the engine.
+	// You must inherit from this class and
+	// override OnUserCreate and OnUserUpdate functions
+	// so you can run an application
 	class GameEngine
 	{
 	public:
 		GameEngine();
-		virtual ~GameEngine();
+		~GameEngine();
 
 	#ifdef DGE_PLATFORM_GLFW3
 		friend class PlatformGLFW3;
@@ -83,56 +95,45 @@ namespace def
 		friend class Console;
 		friend class InputHandler;
 
-	private:
-		bool m_IsAppRunning;
-		bool m_OnlyTextures;
-
-		Graphic m_Font;
-		int m_TabSize;
-
-		std::vector<Layer> m_Layers;
-		size_t m_PickedLayer;
-		size_t m_ConsoleLayer;
-
-		Pixel m_BackgroundColour;
-
-		float m_DeltaTime;
-		float m_TickTimer;
-
-		std::unique_ptr<Platform> m_Platform;
-
-		std::chrono::system_clock::time_point m_TimeStart;
-		std::chrono::system_clock::time_point m_TimeEnd;
-
-		std::unique_ptr<InputHandler> m_Input;
-		std::unique_ptr<Window> m_Window;
-		std::unique_ptr<Console> m_Console;
-
-	#ifndef PLATFORM_EMSCRIPTEN
-		uint32_t m_FramesCount;
-	#endif
-
 	public:
+		// Is used internally
 		static GameEngine* s_Engine;
-		inline static std::vector<Vector2f> s_UnitCircle;
 
+		// Is called before the main loop
 		virtual bool OnUserCreate() = 0;
+
+		// Is being called on every frame
 		virtual bool OnUserUpdate(float deltaTime) = 0;
+
+		// Is being called after clearing the screen buffer and sending
+		// all textures to the pipeline and before flushing the screen
 		virtual bool OnAfterDraw();
 
+		// Is executed when a user presses an ENTER key
 		virtual void OnTextCapturingComplete(const std::string& text);
+
+		// Is executed when a user presses the ENTER key when a console is opened
 		virtual bool OnConsoleCommand(const std::string& command, std::stringstream& output, Pixel& colour);
 
+		// Constructs a window
 		bool Construct(int screenWidth, int screenHeight, int pixelWidth, int pixelHeight, bool fullScreen = false, bool vsync = false, bool dirtyPixel = true);
+		
+		// Must be called only after Construct method, basically starts the main loop
 		void Run();
 
 	private:
+		// Frees memory
 		void Destroy();
+
+		// The main loop of a program (handles input, draws to the screen)
 		void MainLoop();
 
+		// Constructs a unit circle using trigonometry functions
 		static void MakeUnitCircle(std::vector<Vector2f>& circle, size_t verts);
 
 	public:
+		// Drawing routines
+
 		bool Draw(const Vector2i& pos, const Pixel& col = WHITE);
 		virtual bool Draw(int x, int y, const Pixel& col = WHITE);
 
@@ -206,37 +207,84 @@ namespace def
 
 		void DrawTextureString(const Vector2i& pos, std::string_view text, const Pixel& col = WHITE, const Vector2f& scale = { 1.0f, 1.0f });
 
+		// Drawing targets
+
 		void SetDrawTarget(Graphic* target);
 		Graphic* GetDrawTarget();
+
+		// Pixel modes
 
 		void SetPixelMode(Pixel::Mode pixelMode);
 		Pixel::Mode GetPixelMode() const;
 
+		// Texture stuff
+
 		void SetTextureStructure(Texture::Structure textureStructure);
 		Texture::Structure GetTextureStructure() const;
+		void UseOnlyTextures(bool enable);
+
+		// Shaders
 
 		void SetShader(Pixel(*func)(const Vector2i&, const Pixel&, const Pixel&));
 
-		void UseOnlyTextures(bool enable);
+		// Timings
+
 		float GetDeltaTime() const;
 
-		auto GetNativeWindow()
-		{
-		#if defined(DGE_PLATFORM_GLFW3)
-			return ((PlatformGLFW3*)m_Platform.get())->m_Window;
-		#elif defined(DGE_PLATFORM_EMSCRIPTEN)
-			return ((PlatformEmscripten*)m_Platform.get())->m_Display;
-		#endif
-		}
+		// Layers stuff
 
 		size_t CreateLayer(const Vector2i& offset, const Vector2i& size, bool update = true, bool visible = true, const Pixel& tint = WHITE);
+		size_t CreateLayer(Layer* layer);
 		void PickLayer(size_t layer);
 		size_t GetPickedLayer() const;
 		Layer* GetLayerByIndex(size_t index);
 
-		Window *const GetWindow();
-		InputHandler *const GetInput();
-		Console *const GetConsole();
+		// Window, input and console stuff
+
+		Window& Window();
+		InputHandler& Input();
+		Console& Console();
+
+	private:
+		bool m_IsAppRunning;
+		bool m_OnlyTextures;
+
+		// Is used for drawing characters on the screen
+		// as a Sprite via DrawString and as a Texture via DrawTextureString
+		Graphic m_Font;
+		int m_TabSize;
+
+		// Stores all available layers
+		std::vector<std::unique_ptr<Layer>> m_Layers;
+
+		// Index of the currently selected layer in m_Layers
+		size_t m_PickedLayer;
+
+		// Storing the difference between 2 frames
+		float m_DeltaTime;
+
+		// Is used for updating frames count in the title bar
+		float m_TickTimer;
+
+		std::shared_ptr<Platform> m_Platform;
+
+		// Storing 2 time points: on the start of the main loop iteration and one after
+		TimePoint m_TimeStart;
+		TimePoint m_TimeEnd;
+
+		std::shared_ptr<InputHandler> m_Input;
+		std::shared_ptr<def::Window> m_Window;
+		std::unique_ptr<def::Console> m_Console;
+
+	#ifndef PLATFORM_EMSCRIPTEN
+		uint32_t m_FramesCount;
+	#endif
+
+		// This is used for storing circle vertices
+		// that later will be transformed to be drawn
+		// on the screen
+		static constexpr size_t CIRCLE_VERTICES_COUNT = 64;
+		static std::vector<Vector2f> sm_UnitCircle;
 
 	};
 }

@@ -1,14 +1,26 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #include "Pch.hpp"
 #include "defGameEngine.hpp"
 
 namespace def
 {
+
+#pragma region dge_static
+
 	GameEngine* GameEngine::s_Engine = nullptr;
+	std::vector<Vector2f> GameEngine::sm_UnitCircle;
+
+#pragma endregion
+
+#pragma region dge_init
 
 	GameEngine::GameEngine()
 	{
-		m_BackgroundColour = { 255, 255, 255, 255 };
-
 		m_TabSize = 0;
 
 		m_DeltaTime = 0.0f;
@@ -18,24 +30,24 @@ namespace def
 
 		m_PickedLayer = 0;
 
-		MakeUnitCircle(s_UnitCircle, 64); // TODO: Make 64 (vertices count) as constant
+		MakeUnitCircle(sm_UnitCircle, CIRCLE_VERTICES_COUNT);
 
 		m_OnlyTextures = false;
 
 	#if defined(DGE_PLATFORM_GLFW3)
-		m_Platform = std::make_unique<PlatformGLFW3>();
+		m_Platform = std::make_shared<PlatformGLFW3>();
 	#elif defined(DGE_PLATFORM_EMSCRIPTEN)
-		m_Platform = std::make_unique<PlatformEmscripten>();
+		m_Platform = std::make_shared<PlatformEmscripten>();
 	#else
 		#error No platform has been selected
 	#endif
 
-		m_Input = std::make_unique<InputHandler>(m_Platform.get());
-		m_Window = std::make_unique<def::Window>(m_Platform.get());
+		m_Input = std::make_shared<InputHandler>(m_Platform);
+		m_Window = std::make_shared<def::Window>(m_Platform);
 		m_Console = std::make_unique<def::Console>();
 
-		m_Platform->SetInputHandler(m_Input.get());
-		m_Platform->SetWindow(m_Window.get());
+		m_Platform->SetInputHandler(m_Input);
+		m_Platform->SetWindow(m_Window);
 	}
 
 	GameEngine::~GameEngine()
@@ -43,14 +55,12 @@ namespace def
 		Destroy();
 	}
 
+#pragma endregion
+
+#pragma region dge_internal
+
 	void GameEngine::Destroy()
 	{
-		for (auto& layer : m_Layers)
-		{
-			if (layer.pixels)
-				delete layer.pixels;
-		}
-
 		m_Platform->Destroy();
 	}
 
@@ -66,7 +76,10 @@ namespace def
 			m_TickTimer += m_DeltaTime;
 
 			if (m_Platform->IsWindowClose())
+			{
 				m_IsAppRunning = false;
+				return;
+			}
 
 			m_Input->FlushBuffers();
 			m_Input->GrabText();
@@ -74,33 +87,58 @@ namespace def
 			if (!OnUserUpdate(m_DeltaTime))
 				m_IsAppRunning = false;
 
+			size_t layer = m_PickedLayer;
+			m_PickedLayer = 1;
+
+			for (auto iter = m_Layers.begin() + 1; iter != m_Layers.end(); ++iter, ++m_PickedLayer)
+				(*iter)->OnUpdate(m_DeltaTime);
+
+			m_PickedLayer = layer;
+
 			m_Console->Draw();
 
-			m_Platform->ClearBuffer(m_BackgroundColour);
+			m_Platform->ClearBuffer(def::BLACK);
 			m_Platform->OnBeforeDraw();
 
-			for (auto iter = m_Layers.rbegin(); iter != m_Layers.rend(); iter++)
+			auto DrawLayer = [&](std::vector<std::unique_ptr<Layer>>::iterator iter)
 			{
 				if (!m_OnlyTextures)
 				{
-					if (iter->update)
-						iter->pixels->UpdateTexture();
+					if ((*iter)->update && (*iter)->pixels)
+						(*iter)->pixels->UpdateTexture();
 
-					if (iter->visible)
+					if ((*iter)->visible && (*iter)->pixels)
 					{
-						m_Platform->BindTexture(iter->pixels->texture->id);
-						m_Platform->DrawQuad(iter->tint);
+						// Draw layer pixels as a positioned texture
+						const Vector2f& inv = m_Window->GetInvertedScreenSize();
+
+						Vector2f pos1 = (Vector2f((*iter)->offset) * inv * 2.0f - 1.0f) * Vector2f(1.0f, -1.0f);
+						Vector2f pos2 = pos1 + 2.0f * Vector2f((*iter)->size) * inv * Vector2f(1.0f, -1.0f);
+
+						TextureInstance texInst;
+						texInst.texture = (*iter)->pixels->texture;
+						texInst.points = 4;
+						texInst.structure = Texture::Structure::TRIANGLE_FAN;
+						texInst.tint = { (*iter)->tint, (*iter)->tint, (*iter)->tint, (*iter)->tint };
+						texInst.vertices = { pos1, { pos1.x, pos2.y }, pos2, { pos2.x, pos1.y } };
+
+						m_Platform->DrawTexture(texInst);
 					}
 				}
 
-				if (iter->visible)
+				if ((*iter)->visible)
 				{
-					for (auto& texture : iter->textures)
+					for (auto& texture : (*iter)->textures)
 						m_Platform->DrawTexture(texture);
 				}
 
-				iter->textures.clear();
-			}
+				(*iter)->textures.clear();
+			};
+
+			for (auto iter = m_Layers.begin() + 1; iter != m_Layers.end(); ++iter)
+				DrawLayer(iter);
+
+			DrawLayer(m_Layers.begin());
 
 			if (!OnAfterDraw())
 				m_IsAppRunning = false;
@@ -137,40 +175,9 @@ namespace def
 		}
 	}
 
-	void GameEngine::Run()
-	{
-		m_IsAppRunning = OnUserCreate();
+#pragma endregion
 
-		m_TimeStart = std::chrono::system_clock::now();
-		m_TimeEnd = m_TimeStart;
-
-	#ifdef DGE_PLATFORM_EMSCRIPTEN
-		m_Window->UpdateCaption(-1);
-		
-		emscripten_set_main_loop(&PlatformEmscripten::MainLoop, 0, 1);
-	#else
-		m_Window->UpdateCaption(0);
-		m_FramesCount = 0;
-
-		while (m_IsAppRunning)
-			MainLoop();
-	#endif
-	}
-
-	bool GameEngine::OnAfterDraw()
-	{
-		return true;
-	}
-
-	void GameEngine::OnTextCapturingComplete(const std::string& text)
-	{
-
-	}
-
-	bool GameEngine::OnConsoleCommand(const std::string& command, std::stringstream& output, Pixel& colour)
-	{
-		return false;
-	}
+#pragma region dge_running
 
 	bool GameEngine::Construct(int screenWidth, int screenHeight, int pixelWidth, int pixelHeight, bool fullScreen, bool vsync, bool dirtyPixel)
 	{
@@ -179,7 +186,7 @@ namespace def
 
 		// Console layer, always create it as 0'th layer
 		CreateLayer({ 0, 0 }, m_Window->GetScreenSize(), false, false);
-		
+
 		m_PickedLayer = CreateLayer({ 0, 0 }, m_Window->GetScreenSize());
 
 		std::string data =
@@ -232,19 +239,72 @@ namespace def
 		return true;
 	}
 
+	void GameEngine::Run()
+	{
+		m_IsAppRunning = OnUserCreate();
+
+		size_t layer = m_PickedLayer;
+		m_PickedLayer = 1;
+
+		for (auto iter = m_Layers.begin() + 1; iter != m_Layers.end(); ++iter, ++m_PickedLayer)
+			(*iter)->OnCreate();
+
+		m_PickedLayer = layer;
+
+		m_TimeStart = std::chrono::system_clock::now();
+		m_TimeEnd = m_TimeStart;
+
+	#ifdef DGE_PLATFORM_EMSCRIPTEN
+		m_Window->UpdateCaption(-1);
+		
+		emscripten_set_main_loop(&PlatformEmscripten::MainLoop, 0, 1);
+	#else
+		m_Window->UpdateCaption(0);
+		m_FramesCount = 0;
+
+		while (m_IsAppRunning)
+			MainLoop();
+	#endif
+	}
+
+#pragma endregion
+
+#pragma region dge_user_callbacks
+
+	bool GameEngine::OnAfterDraw()
+	{
+		return true;
+	}
+
+	void GameEngine::OnTextCapturingComplete(const std::string& text)
+	{
+
+	}
+
+	bool GameEngine::OnConsoleCommand(const std::string& command, std::stringstream& output, Pixel& colour)
+	{
+		return false;
+	}
+
+#pragma endregion
+
+#pragma region dge_drawing
+
+#pragma region dge_drawing_canvas
+
 	bool GameEngine::Draw(int x, int y, const Pixel& col)
 	{
-		Layer& layer = m_Layers[m_PickedLayer];
+		Layer* layer = m_Layers[m_PickedLayer].get();
 
-		if (!layer.target)
+		if (!layer->target)
 			return false;
 
-		Sprite* target = layer.target->sprite;
+		Sprite* target = layer->target->sprite;
 
-		switch (layer.pixelMode)
+		switch (layer->pixelMode)
 		{
 		case Pixel::Mode::CUSTOM:
-		return target->SetPixel(x, y, layer.shader({ x, y }, target->GetPixel(x, y), col));
+		return target->SetPixel(x, y, layer->shader({ x, y }, target->GetPixel(x, y), col));
 
 		case Pixel::Mode::DEFAULT:
 		return target->SetPixel(x, y, col);
@@ -850,50 +910,6 @@ namespace def
 				Draw(x + x1, y + y1, sprite->GetPixel(fileX + i, fileY + j));
 	}
 
-	void GameEngine::DrawWarpedTexture(const std::vector<Vector2f>& points, const Texture* tex, const Pixel& tint)
-	{
-		auto& layer = m_Layers[m_PickedLayer];
-
-		TextureInstance texInst;
-
-		texInst.texture = tex;
-		texInst.structure = layer.textureStructure;
-		texInst.points = 4;
-		texInst.tint = { tint, tint, tint, tint };
-		texInst.vertices.resize(texInst.points);
-		texInst.uv = { { 0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f} };
-
-		float rd = ((points[2].x - points[0].x) * (points[3].y - points[1].y) - (points[3].x - points[1].x) * (points[2].y - points[0].y));
-
-		if (rd != 0.0f)
-		{
-			rd = 1.0f / rd;
-
-			float rn = ((points[3].x - points[1].x) * (points[0].y - points[1].y) - (points[3].y - points[1].y) * (points[0].x - points[1].x)) * rd;
-			float sn = ((points[2].x - points[0].x) * (points[0].y - points[1].y) - (points[2].y - points[0].y) * (points[0].x - points[1].x)) * rd;
-
-			Vector2f center;
-			if (!(rn < 0.0f || rn > 1.0f || sn < 0.0f || sn > 1.0f))
-				center = points[0] + rn * (points[2] - points[0]);
-
-			float d[4];
-
-			for (int i = 0; i < 4; i++)
-				d[i] = (points[i] - center).Length();
-
-			const Vector2f& inv = m_Window->GetInvertedScreenSize();
-
-			for (int i = 0; i < 4; i++)
-			{
-				float q = d[i] == 0.0f ? 1.0f : (d[i] + d[(i + 2) & 3]) / d[(i + 2) & 3];
-				texInst.uv[i] *= q;
-				texInst.vertices[i] = { (points[i].x * inv.x) * 2.0f - 1.0f, ((points[i].y * inv.y) * 2.0f - 1.0f) * -1.0f };
-			}
-
-			layer.textures.push_back(texInst);
-		}
-	}
-
 	void GameEngine::DrawWireFrameModel(const std::vector<Vector2f>& modelCoordinates, float x, float y, float rotation, float scale, const Pixel& col)
 	{
 		size_t verts = modelCoordinates.size();
@@ -1012,38 +1028,7 @@ namespace def
 
 	void GameEngine::Clear(const Pixel& col)
 	{
-		m_Layers[m_PickedLayer].target->sprite->SetPixelData(col);
-	}
-
-	void GameEngine::SetDrawTarget(Graphic* target)
-	{
-		m_Layers[m_PickedLayer].target = target ? target : m_Layers[m_PickedLayer].pixels;
-		m_Layers[m_PickedLayer].target->UpdateTexture();
-	}
-
-	Graphic* GameEngine::GetDrawTarget()
-	{
-		return m_Layers[m_PickedLayer].target;
-	}
-
-	void GameEngine::SetPixelMode(Pixel::Mode pixelMode)
-	{
-		m_Layers[m_PickedLayer].pixelMode = pixelMode;
-	}
-
-	Pixel::Mode GameEngine::GetPixelMode() const
-	{
-		return m_Layers[m_PickedLayer].pixelMode;
-	}
-
-	void GameEngine::SetTextureStructure(Texture::Structure textureStructure)
-	{
-		m_Layers[m_PickedLayer].textureStructure = textureStructure;
-	}
-
-	Texture::Structure GameEngine::GetTextureStructure() const
-	{
-		return m_Layers[m_PickedLayer].textureStructure;
+		m_Layers[m_PickedLayer]->target->sprite->SetPixelData(col);
 	}
 
 	bool GameEngine::Draw(const Vector2i& pos, const Pixel& p)
@@ -1054,126 +1039,6 @@ namespace def
 	void GameEngine::DrawLine(const Vector2i& pos1, const Vector2i& pos2, const Pixel& col)
 	{
 		DrawLine(pos1.x, pos1.y, pos2.x, pos2.y, col);
-	}
-
-	void GameEngine::DrawTexturePolygon(const std::vector<Vector2f>& verts, const std::vector<Pixel>& cols, Texture::Structure structure)
-	{
-		TextureInstance texInst;
-
-		texInst.texture = nullptr;
-		texInst.points = verts.size();
-		texInst.structure = structure;
-
-		texInst.tint.resize(verts.size());
-
-		if (cols.size() > 1)
-		{
-			std::copy(
-				cols.begin(),
-				cols.end(),
-				texInst.tint.begin());
-		}
-		else
-		{
-			std::fill(
-				texInst.tint.begin(),
-				texInst.tint.end(),
-				cols[0]);
-		}
-
-		texInst.uv.resize(verts.size());
-		texInst.vertices.resize(verts.size());
-
-		const Vector2f& inv = m_Window->GetInvertedScreenSize();
-
-		for (size_t i = 0; i < verts.size(); i++)
-		{
-			texInst.vertices[i].x = verts[i].x * inv.x * 2.0f - 1.0f;
-			texInst.vertices[i].y = 1.0f - verts[i].y * inv.y * 2.0f;
-		}
-
-		m_Layers[m_PickedLayer].textures.push_back(texInst);
-	}
-
-	void GameEngine::DrawTextureLine(const Vector2i& pos1, const Vector2i& pos2, const Pixel& col)
-	{
-		DrawTexturePolygon({ pos1, pos2 }, { col }, Texture::Structure::WIREFRAME);
-	}
-
-	void GameEngine::DrawTextureTriangle(const Vector2i& pos1, const Vector2i& pos2, const Vector2i& pos3, const Pixel& col)
-	{
-		DrawTexturePolygon({ pos1, pos2, pos3 }, { col }, Texture::Structure::WIREFRAME);
-	}
-
-	void GameEngine::FillTextureTriangle(const Vector2i& pos1, const Vector2i& pos2, const Vector2i& pos3, const Pixel& col)
-	{
-		DrawTexturePolygon({ pos1, pos2, pos3 }, { col }, Texture::Structure::TRIANGLE_FAN);
-	}
-
-	void GameEngine::DrawTextureRectangle(const Vector2i& pos, const Vector2i& size, const Pixel& col)
-	{
-		// Adding 0.25 is a fix for now, I don't know if that can lead to problems on different configurations
-		DrawTexturePolygon({ pos, { float(pos.x + size.x), (float)pos.y }, pos + size, { (float)pos.x, float(pos.y + size.y) + 0.25f } }, { col }, Texture::Structure::WIREFRAME);
-	}
-
-	void GameEngine::FillTextureRectangle(const Vector2i& pos, const Vector2i& size, const Pixel& col)
-	{
-		DrawTexturePolygon({ pos, { float(pos.x + size.x), (float)pos.y }, pos + size, { (float)pos.x, float(pos.y + size.y) } }, { col }, Texture::Structure::TRIANGLE_FAN);
-	}
-
-	void GameEngine::DrawTextureCircle(const Vector2i& pos, int radius, const Pixel& col)
-	{
-		std::vector<Vector2f> verts(s_UnitCircle.size());
-
-		for (size_t i = 0; i < verts.size(); i++)
-			verts[i] = s_UnitCircle[i] * (float)radius + pos;
-
-		DrawTexturePolygon(verts, { col }, Texture::Structure::WIREFRAME);
-	}
-
-	void GameEngine::FillTextureCircle(const Vector2i& pos, int radius, const Pixel& col)
-	{
-		std::vector<Vector2f> verts(s_UnitCircle.size());
-
-		for (size_t i = 0; i < verts.size(); i++)
-			verts[i] = s_UnitCircle[i] * (float)radius + pos;
-
-		DrawTexturePolygon(verts, { col }, Texture::Structure::TRIANGLE_FAN);
-	}
-
-	void GameEngine::GradientTextureTriangle(const Vector2i& pos1, const Vector2i& pos2, const Vector2i& pos3, const Pixel& col1, const Pixel& col2, const Pixel& col3)
-	{
-		DrawTexturePolygon({ pos1, pos2, pos3 }, { col1, col2, col3 }, Texture::Structure::TRIANGLE_FAN);
-	}
-
-	void GameEngine::GradientTextureRectangle(const Vector2i& pos, const Vector2i& size, const Pixel& colTL, const Pixel& colTR, const Pixel& colBR, const Pixel& colBL)
-	{
-		DrawTexturePolygon({ pos, { float(pos.x + size.x), (float)pos.y }, pos + size, { (float)pos.x, float(pos.y + size.y) } }, { colTL, colTR, colBR, colBL }, Texture::Structure::TRIANGLE_FAN);
-	}
-
-	void GameEngine::DrawTextureString(const Vector2i& pos, std::string_view text, const Pixel& col, const Vector2f& scale)
-	{
-		Vector2f p = { 0.0f, 0.0f };
-
-		for (auto c : text)
-		{
-			if (c == '\n')
-			{
-				p.x = 0;
-				p.y += 8.0f * scale.y;
-			}
-			else if (c == '\t')
-			{
-				p.x += 8.0f * float(m_TabSize) * scale.x;
-			}
-			else
-			{
-				Vector2f offset((c - 32) % 16, (c - 32) / 16);
-
-				DrawPartialTexture(pos + p, m_Font.texture, offset * 8.0f, { 8.0f, 8.0f }, scale, col);
-				p.x += 8.0f * scale.x;
-			}
-		}
 	}
 
 	void GameEngine::DrawTriangle(const Vector2i& pos1, const Vector2i& pos2, const Vector2i& pos3, const Pixel& col)
@@ -1226,9 +1091,147 @@ namespace def
 		DrawPartialSprite(pos.x, pos.y, filePos.x, filePos.y, fileSize.x, fileSize.y, spr);
 	}
 
+	void GameEngine::DrawWireFrameModel(const std::vector<Vector2f>& modelCoordinates, const Vector2f& pos, float rotation, float scale, const Pixel& col)
+	{
+		DrawWireFrameModel(modelCoordinates, pos.x, pos.y, rotation, scale, col);
+	}
+
+	void GameEngine::FillWireFrameModel(const std::vector<Vector2f>& modelCoordinates, const Vector2f& pos, float rotation, float scale, const Pixel& col)
+	{
+		FillWireFrameModel(modelCoordinates, pos.x, pos.y, rotation, scale, col);
+	}
+
+	void GameEngine::DrawString(const Vector2i& pos, std::string_view text, const Pixel& col, const Vector2i& scale)
+	{
+		DrawString(pos.x, pos.y, text, col, scale.x, scale.y);
+	}
+
+#pragma endregion
+
+#pragma region dge_drawing_gpu
+
+	void GameEngine::DrawTexturePolygon(const std::vector<Vector2f>& verts, const std::vector<Pixel>& cols, Texture::Structure structure)
+	{
+		TextureInstance texInst;
+
+		texInst.texture = nullptr;
+		texInst.points = verts.size();
+		texInst.structure = structure;
+
+		texInst.tint.resize(verts.size());
+
+		if (cols.size() > 1)
+		{
+			std::copy(
+				cols.begin(),
+				cols.end(),
+				texInst.tint.begin());
+		}
+		else
+		{
+			std::fill(
+				texInst.tint.begin(),
+				texInst.tint.end(),
+				cols[0]);
+		}
+
+		texInst.uv.resize(verts.size());
+		texInst.vertices.resize(verts.size());
+
+		const Vector2f& inv = m_Window->GetInvertedScreenSize();
+
+		for (size_t i = 0; i < verts.size(); i++)
+		{
+			texInst.vertices[i].x = verts[i].x * inv.x * 2.0f - 1.0f;
+			texInst.vertices[i].y = 1.0f - verts[i].y * inv.y * 2.0f;
+		}
+
+		m_Layers[m_PickedLayer]->textures.push_back(texInst);
+	}
+
+	void GameEngine::DrawTextureLine(const Vector2i& pos1, const Vector2i& pos2, const Pixel& col)
+	{
+		DrawTexturePolygon({ pos1, pos2 }, { col }, Texture::Structure::WIREFRAME);
+	}
+
+	void GameEngine::DrawTextureTriangle(const Vector2i& pos1, const Vector2i& pos2, const Vector2i& pos3, const Pixel& col)
+	{
+		DrawTexturePolygon({ pos1, pos2, pos3 }, { col }, Texture::Structure::WIREFRAME);
+	}
+
+	void GameEngine::FillTextureTriangle(const Vector2i& pos1, const Vector2i& pos2, const Vector2i& pos3, const Pixel& col)
+	{
+		DrawTexturePolygon({ pos1, pos2, pos3 }, { col }, Texture::Structure::TRIANGLE_FAN);
+	}
+
+	void GameEngine::DrawTextureRectangle(const Vector2i& pos, const Vector2i& size, const Pixel& col)
+	{
+		DrawTexturePolygon({ pos, { float(pos.x + size.x), (float)pos.y }, pos + size, { (float)pos.x, float(pos.y + size.y) } }, { col }, Texture::Structure::WIREFRAME);
+	}
+
+	void GameEngine::FillTextureRectangle(const Vector2i& pos, const Vector2i& size, const Pixel& col)
+	{
+		DrawTexturePolygon({ pos, { float(pos.x + size.x), (float)pos.y }, pos + size, { (float)pos.x, float(pos.y + size.y) } }, { col }, Texture::Structure::TRIANGLE_FAN);
+	}
+
+	void GameEngine::DrawTextureCircle(const Vector2i& pos, int radius, const Pixel& col)
+	{
+		std::vector<Vector2f> verts(sm_UnitCircle.size());
+
+		for (size_t i = 0; i < verts.size(); i++)
+			verts[i] = sm_UnitCircle[i] * (float)radius + pos;
+
+		DrawTexturePolygon(verts, { col }, Texture::Structure::WIREFRAME);
+	}
+
+	void GameEngine::FillTextureCircle(const Vector2i& pos, int radius, const Pixel& col)
+	{
+		std::vector<Vector2f> verts(sm_UnitCircle.size());
+
+		for (size_t i = 0; i < verts.size(); i++)
+			verts[i] = sm_UnitCircle[i] * (float)radius + pos;
+
+		DrawTexturePolygon(verts, { col }, Texture::Structure::TRIANGLE_FAN);
+	}
+
+	void GameEngine::GradientTextureTriangle(const Vector2i& pos1, const Vector2i& pos2, const Vector2i& pos3, const Pixel& col1, const Pixel& col2, const Pixel& col3)
+	{
+		DrawTexturePolygon({ pos1, pos2, pos3 }, { col1, col2, col3 }, Texture::Structure::TRIANGLE_FAN);
+	}
+
+	void GameEngine::GradientTextureRectangle(const Vector2i& pos, const Vector2i& size, const Pixel& colTL, const Pixel& colTR, const Pixel& colBR, const Pixel& colBL)
+	{
+		DrawTexturePolygon({ pos, { float(pos.x + size.x), (float)pos.y }, pos + size, { (float)pos.x, float(pos.y + size.y) } }, { colTL, colTR, colBR, colBL }, Texture::Structure::TRIANGLE_FAN);
+	}
+
+	void GameEngine::DrawTextureString(const Vector2i& pos, std::string_view text, const Pixel& col, const Vector2f& scale)
+	{
+		Vector2f p = { 0.0f, 0.0f };
+
+		for (auto c : text)
+		{
+			if (c == '\n')
+			{
+				p.x = 0;
+				p.y += 8.0f * scale.y;
+			}
+			else if (c == '\t')
+			{
+				p.x += 8.0f * float(m_TabSize) * scale.x;
+			}
+			else
+			{
+				Vector2f offset((c - 32) % 16, (c - 32) / 16);
+
+				DrawPartialTexture(pos + p, m_Font.texture, offset * 8.0f, { 8.0f, 8.0f }, scale, col);
+				p.x += 8.0f * scale.x;
+			}
+		}
+	}
+
 	void GameEngine::DrawTexture(const Vector2f& pos, const Texture* tex, const Vector2f& scale, const Pixel& tint)
 	{
-		auto& layer = m_Layers[m_PickedLayer];
+		auto layer = m_Layers[m_PickedLayer].get();
 
 		const Vector2f& inv = m_Window->GetInvertedScreenSize();
 
@@ -1239,16 +1242,16 @@ namespace def
 
 		texInst.texture = tex;
 		texInst.points = 4;
-		texInst.structure = layer.textureStructure;
+		texInst.structure = layer->textureStructure;
 		texInst.tint = { tint, tint, tint, tint };
 		texInst.vertices = { pos1, { pos1.x, pos2.y }, pos2, { pos2.x, pos1.y } };
 
-		layer.textures.push_back(texInst);
+		layer->textures.push_back(texInst);
 	}
 
 	void GameEngine::DrawPartialTexture(const Vector2f& pos, const Texture* tex, const Vector2f& filePos, const Vector2f& fileSize, const Vector2f& scale, const Pixel& tint)
 	{
-		auto& layer = m_Layers[m_PickedLayer];
+		auto layer = m_Layers[m_PickedLayer].get();
 
 		const Vector2f& inv = m_Window->GetInvertedScreenSize();
 
@@ -1267,23 +1270,23 @@ namespace def
 
 		texInst.texture = tex;
 		texInst.points = 4;
-		texInst.structure = layer.textureStructure;
+		texInst.structure = layer->textureStructure;
 		texInst.tint = { tint, tint, tint, tint };
 		texInst.vertices = { quantPos1, { quantPos1.x, quantPos2.y }, quantPos2, { quantPos2.x, quantPos1.y } };
 		texInst.uv = { tl, { tl.x, br.y }, br, { br.x, tl.y } };
 
-		layer.textures.push_back(texInst);
+		layer->textures.push_back(texInst);
 	}
 
 	void GameEngine::DrawRotatedTexture(const Vector2f& pos, const Texture* tex, float rotation, const Vector2f& center, const Vector2f& scale, const Pixel& tint)
 	{
-		auto& layer = m_Layers[m_PickedLayer];
+		auto layer = m_Layers[m_PickedLayer].get();
 
 		TextureInstance texInst;
 
 		texInst.texture = tex;
 		texInst.points = 4;
-		texInst.structure = layer.textureStructure;
+		texInst.structure = layer->textureStructure;
 		texInst.tint = { tint, tint, tint, tint };
 
 		Vector2f denormCenter = center * tex->size;
@@ -1311,18 +1314,18 @@ namespace def
 			texInst.vertices[i].y *= -1.0f;
 		}
 
-		layer.textures.push_back(texInst);
+		layer->textures.push_back(texInst);
 	}
 
 	void GameEngine::DrawPartialRotatedTexture(const Vector2f& pos, const Texture* tex, const Vector2f& filePos, const Vector2f& fileSize, float rotation, const Vector2f& center, const Vector2f& scale, const Pixel& tint)
 	{
-		auto& layer = m_Layers[m_PickedLayer];
+		auto layer = m_Layers[m_PickedLayer].get();
 
 		TextureInstance texInst;
 
 		texInst.texture = tex;
 		texInst.points = 4;
-		texInst.structure = layer.textureStructure;
+		texInst.structure = layer->textureStructure;
 		texInst.tint = { tint, tint, tint, tint };
 
 		Vector2f denormCenter = center * fileSize;
@@ -1355,35 +1358,103 @@ namespace def
 
 		texInst.uv = { tl, { tl.x, br.y }, br, { br.x, tl.y } };
 
-		layer.textures.push_back(texInst);
+		layer->textures.push_back(texInst);
 	}
 
-	void GameEngine::DrawWireFrameModel(const std::vector<Vector2f>& modelCoordinates, const Vector2f& pos, float rotation, float scale, const Pixel& col)
+	void GameEngine::DrawWarpedTexture(const std::vector<Vector2f>& points, const Texture* tex, const Pixel& tint)
 	{
-		DrawWireFrameModel(modelCoordinates, pos.x, pos.y, rotation, scale, col);
-	}
+		auto& layer = m_Layers[m_PickedLayer];
 
-	void GameEngine::FillWireFrameModel(const std::vector<Vector2f>& modelCoordinates, const Vector2f& pos, float rotation, float scale, const Pixel& col)
-	{
-		FillWireFrameModel(modelCoordinates, pos.x, pos.y, rotation, scale, col);
-	}
+		TextureInstance texInst;
 
-	void GameEngine::DrawString(const Vector2i& pos, std::string_view text, const Pixel& col, const Vector2i& scale)
-	{
-		DrawString(pos.x, pos.y, text, col, scale.x, scale.y);
+		texInst.texture = tex;
+		texInst.structure = layer->textureStructure;
+		texInst.points = 4;
+		texInst.tint = { tint, tint, tint, tint };
+		texInst.vertices.resize(texInst.points);
+		texInst.uv = { { 0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f} };
+
+		float rd = ((points[2].x - points[0].x) * (points[3].y - points[1].y) - (points[3].x - points[1].x) * (points[2].y - points[0].y));
+
+		if (rd != 0.0f)
+		{
+			rd = 1.0f / rd;
+
+			float rn = ((points[3].x - points[1].x) * (points[0].y - points[1].y) - (points[3].y - points[1].y) * (points[0].x - points[1].x)) * rd;
+			float sn = ((points[2].x - points[0].x) * (points[0].y - points[1].y) - (points[2].y - points[0].y) * (points[0].x - points[1].x)) * rd;
+
+			Vector2f center;
+
+			if (rn >= 0.0f && rn <= 1.0f && sn >= 0.0f && sn <= 1.0f)
+				center = points[0] + rn * (points[2] - points[0]);
+
+			float d[4];
+
+			for (int i = 0; i < 4; i++)
+				d[i] = (points[i] - center).Length();
+
+			const Vector2f& inv = m_Window->GetInvertedScreenSize();
+
+			for (int i = 0; i < 4; i++)
+			{
+				float q = d[i] == 0.0f ? 1.0f : (d[i] + d[(i + 2) & 3]) / d[(i + 2) & 3];
+				texInst.uv[i] *= q;
+				texInst.vertices[i] = { points[i].x * inv.x * 2.0f - 1.0f, 1.0f - points[i].y * inv.y * 2.0f };
+			}
+
+			layer->textures.push_back(texInst);
+		}
 	}
 
 	void GameEngine::ClearTexture(const Pixel& col)
 	{
-		m_BackgroundColour = col;
+		Layer* layer = m_Layers[m_PickedLayer].get();
+		FillTextureRectangle({ 0, 0 }, layer->size, col);
 	}
 
-	void GameEngine::SetShader(Pixel(*func)(const Vector2i&, const Pixel&, const Pixel&))
-	{
-		auto& layer = m_Layers[m_PickedLayer];
+#pragma endregion
 
-		layer.shader = func;
-		layer.pixelMode = func ? Pixel::Mode::CUSTOM : Pixel::Mode::DEFAULT;
+#pragma endregion
+
+#pragma region dge_draw_targets
+
+	void GameEngine::SetDrawTarget(Graphic* target)
+	{
+		m_Layers[m_PickedLayer]->target = target ? target : m_Layers[m_PickedLayer]->pixels;
+		m_Layers[m_PickedLayer]->target->UpdateTexture();
+	}
+
+	Graphic* GameEngine::GetDrawTarget()
+	{
+		return m_Layers[m_PickedLayer]->target;
+	}
+
+#pragma endregion
+
+#pragma region dge_pixels
+
+	void GameEngine::SetPixelMode(Pixel::Mode pixelMode)
+	{
+		m_Layers[m_PickedLayer]->pixelMode = pixelMode;
+	}
+
+	Pixel::Mode GameEngine::GetPixelMode() const
+	{
+		return m_Layers[m_PickedLayer]->pixelMode;
+	}
+
+#pragma endregion
+
+#pragma region dge_textures
+
+	void GameEngine::SetTextureStructure(Texture::Structure textureStructure)
+	{
+		m_Layers[m_PickedLayer]->textureStructure = textureStructure;
+	}
+
+	Texture::Structure GameEngine::GetTextureStructure() const
+	{
+		return m_Layers[m_PickedLayer]->textureStructure;
 	}
 
 	void GameEngine::UseOnlyTextures(bool enable)
@@ -1391,26 +1462,63 @@ namespace def
 		m_OnlyTextures = enable;
 	}
 
+#pragma endregion
+
+#pragma region dge_shaders
+
+	void GameEngine::SetShader(Pixel(*func)(const Vector2i&, const Pixel&, const Pixel&))
+	{
+		auto& layer = m_Layers[m_PickedLayer];
+
+		layer->shader = func;
+		layer->pixelMode = func ? Pixel::Mode::CUSTOM : Pixel::Mode::DEFAULT;
+	}
+
+#pragma endregion
+
+#pragma region dge_timings
+
 	float GameEngine::GetDeltaTime() const
 	{
 		return m_DeltaTime;
 	}
 
+#pragma endregion
+
+#pragma region dge_layers
+
 	size_t GameEngine::CreateLayer(const Vector2i& offset, const Vector2i& size, bool update, bool visible, const Pixel& tint)
 	{
-		Layer layer;
-		layer.offset = offset;
-		layer.size = size;
+		Layer* layer = new Layer();
+		layer->offset = offset;
+		layer->size = size;
 
 		if (!m_OnlyTextures)
-			layer.pixels = new Graphic(size);
+			layer->pixels = new Graphic(size);
 
-		layer.update = update;
-		layer.visible = visible;
-		layer.tint = tint;
-		layer.target = layer.pixels;
+		layer->update = update;
+		layer->visible = visible;
+		layer->tint = tint;
+		layer->target = layer->pixels;
 
-		m_Layers.push_back(std::move(layer));
+		m_Layers.push_back(std::unique_ptr<Layer>(layer));
+
+		return m_Layers.size() - 1;
+	}
+
+	size_t GameEngine::CreateLayer(Layer* layer)
+	{
+		if (layer == nullptr)
+			return -1;
+
+		// Ensure pixels are allocated if needed
+		if (!m_OnlyTextures && !layer->pixels)
+		{
+			layer->pixels = new Graphic(layer->size);
+			layer->target = layer->pixels;
+		}
+
+		m_Layers.push_back(std::unique_ptr<Layer>(layer));
 		return m_Layers.size() - 1;
 	}
 
@@ -1427,22 +1535,28 @@ namespace def
 
 	Layer* GameEngine::GetLayerByIndex(size_t index)
 	{
-		return &m_Layers[index];
+		return m_Layers[index].get();
 	}
 
-	Window *const GameEngine::GetWindow()
+#pragma endregion
+
+#pragma region dge_window_input_console
+
+	Window& GameEngine::Window()
 	{
-		return m_Window.get();
+		return *m_Window.get();
 	}
 
-	InputHandler *const GameEngine::GetInput()
+	InputHandler& GameEngine::Input()
 	{
-		return m_Input.get();
+		return *m_Input.get();
 	}
 
-	Console *const GameEngine::GetConsole()
+	Console& GameEngine::Console()
 	{
-		return m_Console.get();
+		return *m_Console.get();
 	}
+
+#pragma endregion
 
 }

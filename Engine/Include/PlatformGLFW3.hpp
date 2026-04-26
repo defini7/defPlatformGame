@@ -1,3 +1,9 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #pragma once
 
 #ifndef DGE_PLATFORM_GLFW3_HPP
@@ -5,6 +11,8 @@
 
 #include "Pch.hpp"
 #include "PlatformGL.hpp"
+
+#define GL_SILENCE_DEPRECATION
 #include "GLFW/glfw3.h"
 
 namespace def
@@ -15,10 +23,16 @@ namespace def
 		PlatformGLFW3();
 
 		friend class GameEngine;
+		friend class Window;
 
 	private:
 		GLFWmonitor* m_Monitor;
 		GLFWwindow* m_NativeWindow;
+
+		Vector2i m_FullscreenSize;
+		
+		Vector2i m_ViewPos;
+		Vector2i m_ViewSize;
 
 	public:
 		static void ErrorCallback(int errorCode, const char* description);
@@ -27,9 +41,11 @@ namespace def
 		static void MousePosCallback(GLFWwindow* window, double x, double y);
 		static void KeyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 		static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+		static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
+		static void WindowPosCallback(GLFWwindow* window, int x, int y);
 
 		void Destroy() const override;
-		void SetTitle(const std::string& text) const override;
+		void SetTitle(const std::string_view text) const override;
 
 		bool IsWindowClose() const override;
 		bool IsWindowFocused() const override;
@@ -40,6 +56,13 @@ namespace def
 		bool ConstructWindow(Vector2i& screenSize, const Vector2i& pixelSize, Vector2i& windowSize, bool vsync, bool fullscreen, bool dirtypixel) override;
 
 		void SetIcon(Sprite& icon) const override;
+
+		void EnableVSync(bool enable) override;
+		void EnableFullscreen(bool enable) override;
+
+	private:
+		void UpdateViewport(int width, int height);
+
 	};
 }
 

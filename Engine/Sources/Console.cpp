@@ -1,3 +1,9 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #include "Pch.hpp"
 #include "Console.hpp"
 
@@ -13,6 +19,11 @@ namespace def
         m_History.clear();
     }
 
+    void Console::Print(const std::string& text, const Pixel& colour)
+    {
+        m_History.push_back({ "", text, colour, false });
+    }
+
     void Console::HandleCommand(const std::string& command)
     {
         if (!IsShown())
@@ -23,8 +34,11 @@ namespace def
 
         if (GameEngine::s_Engine->OnConsoleCommand(command, output, colour))
         {
-            m_History.push_back({ command, output.str(), colour });
-            m_PickedHistoryCommand = m_History.size();
+            if (!command.empty())
+            {
+                m_History.push_back({ command, output.str(), colour, true });
+                m_PickedHistoryCommand = m_History.size();
+            }
         }
     }
 
@@ -37,20 +51,28 @@ namespace def
 
         if (GameEngine::s_Engine->m_Input->GetKeyState(Key::UP).pressed)
         {
-            if (m_PickedHistoryCommand > 0)
+            do
             {
-                m_PickedHistoryCommand--;
-                moved = true;
+                if (m_PickedHistoryCommand > 0)
+                {
+                    m_PickedHistoryCommand--;
+                    moved = m_History[m_PickedHistoryCommand].isCommand;
+                }
             }
+            while (!moved && m_PickedHistoryCommand > 0);
         }
 
         if (GameEngine::s_Engine->m_Input->GetKeyState(Key::DOWN).pressed)
         {
-            if (m_PickedHistoryCommand < m_History.size() - 1)
+            do
             {
-                m_PickedHistoryCommand++;
-                moved = true;
+                if (m_PickedHistoryCommand < m_History.size() - 1)
+                {
+                    m_PickedHistoryCommand++;
+                    moved = m_History[m_PickedHistoryCommand].isCommand;
+                }
             }
+            while (!moved && m_PickedHistoryCommand < m_History.size() - 1);
         }
 
         if (moved)
@@ -75,28 +97,33 @@ namespace def
         e->FillTextureRectangle({ 0, 0 }, e->m_Window->GetScreenSize(), m_BackgroundColour);
 
         int printCount = std::min(e->m_Window->GetScreenHeight() / 22, (int)m_History.size());
-        int start = m_History.size() - printCount;
+        int offset = 10;
 
-        for (size_t i = start; i < m_History.size(); i++)
+        for (int i = m_History.size() - printCount; i < m_History.size(); i++)
         {
             auto& entry = m_History[i];
 
-            e->DrawTextureString({ 10, 10 + (int(i) - start) * 20 }, "> " + entry.command);
-            e->DrawTextureString({ 10, 20 + (int(i) - start) * 20 }, entry.output, entry.outputColour);
+            if (entry.isCommand)
+            {
+                e->DrawTextureString({ 10, offset }, "> " + entry.command);
+                offset += 10;
+            }
+
+            e->DrawTextureString({ 10, offset }, entry.output, entry.outputColour);
+            offset += 10 * (std::count(entry.output.begin(), entry.output.end(), '\n') + 1);
         }
 
         int x = e->m_Input->GetCapturedTextCursorPosition() * 8 + 36;
-        int y = e->m_Window->GetScreenHeight() - 18;
 
-        e->DrawTextureString({ 20, y }, "> " + e->m_Input->GetCapturedText(), YELLOW);
-        e->DrawTextureLine({ x, y }, { x, y + 8 }, RED);
+        e->DrawTextureString({ 20, offset }, "> " + e->m_Input->GetCapturedText(), YELLOW);
+        e->DrawTextureLine({ x, offset }, { x, offset + 8 }, RED);
 
         e->PickLayer(currentLayer);
     }
 
     void Console::Show(bool show)
     {
-        Layer& layer = GameEngine::s_Engine->m_Layers[0];
+        Layer& layer = *GameEngine::s_Engine->m_Layers[0];
 
         layer.visible = show;
         layer.update = show;
@@ -111,6 +138,6 @@ namespace def
 
     bool Console::IsShown() const
     {
-        return GameEngine::s_Engine->m_Layers[0].visible;
+        return GameEngine::s_Engine->m_Layers[0]->visible;
     }
 }

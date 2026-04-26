@@ -5,8 +5,21 @@
  *----------------------------------------------------------------*/
 
 #include "Pch.hpp"
+#include "Layer.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
+namespace def
+{
+    Layer::~Layer()
+    {
+        if (pixels)
+            delete pixels;
+    }
 
-#include "StbImage.hpp"
+    bool Layer::OnCreate() { return true; }
+    bool Layer::OnUpdate(float deltaTime) { return true; }
+
+    GameEngine& Layer::Context()
+    {
+        return *GameEngine::s_Engine;
+    }
+}

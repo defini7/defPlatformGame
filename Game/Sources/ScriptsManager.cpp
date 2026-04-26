@@ -1,3 +1,9 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #include "../Include/ScriptsManager.hpp"
 
 ScriptsManager::ScriptsManager()
@@ -21,7 +27,7 @@ bool ScriptsManager::LoadScript(const std::string& filename)
 	}
 	catch (const sol::error& e)
 	{
-		logger::Error(e.what());
+		Logger::Error(e.what());
 
 		return false;
 	}

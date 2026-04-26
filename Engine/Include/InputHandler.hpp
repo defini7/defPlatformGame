@@ -1,3 +1,9 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #pragma once
 
 #ifndef DGE_INPUT_HANDLER_HPP
@@ -9,8 +15,10 @@
 
 namespace def
 {
+	// You can get a state of each key specified here using GetKeyState method
     enum class Key
 	{
+		// Not a key, used as a placeholder for non-keys
 		NONE = -1,
 
 		SPACE, APOSTROPHE, COMMA, MINUS, PERIOD, SLASH,
@@ -36,16 +44,25 @@ namespace def
 		LEFT_SHIFT, LEFT_CONTROL, LEFT_ALT, LEFT_SUPER, RIGHT_SHIFT,
 		RIGHT_CONTROL, RIGHT_ALT, RIGHT_SUPER, MENU,
 
-		KEYS_COUNT
+		// A number of the keys in Key enum
+		COUNT
 	};
+
+	// Key::COUNT
+	inline static constexpr uint8_t KEYS_COUNT = static_cast<uint8_t>(Key::COUNT);
     
+	// You can get a state of each button specified here using GetButtonState method
 	enum class Button
 	{
 		LEFT, RIGHT, WHEEL,
 		MOUSE4, MOUSE5, MOUSE6,
-		MOUSE7, MOUSE8
+		MOUSE7, MOUSE8, COUNT
 	};
 
+	// Button::COUNT
+	inline static constexpr uint8_t BUTTONS_COUNT = static_cast<uint8_t>(Button::COUNT);
+
+	// Holds a state of each key or button (held, released, or pressed)
     struct KeyState
 	{
 		KeyState();
@@ -56,6 +73,7 @@ namespace def
 		bool pressed;
 	};
 
+	// Provides an API for capturing user input (mouse, keyboard, touches)
     class InputHandler
     {
 	public:
@@ -67,55 +85,91 @@ namespace def
 		friend class GameEngine;
 
     public:
-        explicit InputHandler(Platform* platform);
+        explicit InputHandler(std::shared_ptr<Platform> platform);
 
+		// Erase all captured from the keyboard text
 		void ClearCapturedText();
 
+		// Returns a state of a key on your keyboard
         const KeyState& GetKeyState(Key key) const;
+
+		// Returns a state of a button on your mouse or a touch
         const KeyState& GetButtonState(Button button) const;
 
+		// Starts or stops capturing a text from your keyboard
 		void CaptureText(bool enable);
+
+		// Returns true if the text is being captured right now
 		bool IsCapturingText() const;
 
+		// Returns the mouse position in screen coordinates
 		const Vector2i& GetMousePosition() const;
 
+		// Returns mouse X coordinate in screen space
 		int GetMouseX() const;
+
+		// Returns mouse Y coordinate in screen space
 		int GetMouseY() const;
 
+		// Returns the number of how many scrolls the user did using mouse,
+		// positivity and negativity of the value specifies the direction of scrolling
 		int GetScrollDelta() const;
 
+		// Returns text that was captured from a keyboard
 		const std::string& GetCapturedText() const;
+
+		// Returns the position of the cursor in a being captured text
 		size_t GetCapturedTextCursorPosition() const;
 
+		// Returns true if the CAPS key was activated
 		bool IsCaps() const;
 
     public:
+		// For now we have only US keyboard layout,
+		// here we map a key to its character analogue on the keyboard
         static std::unordered_map<Key, std::pair<char, char>> s_KeyboardUS;
+
+		// Maps the platform specific key constant to the value from the Key enum
 		static std::unordered_map<int, Key> s_KeysTable;
 
 	protected:
+		// Sets the m_CapturedText field to text
 		void SetCapturedText(const std::string& text);
+
+		// Sets the m_CapturedTextCursorPos to pos
 		void SetCapturedTextCursorPosition(size_t pos);
 
+		// Polls all events on the current frame
 		void GrabEvents();
+		
+		// Updates states of the keys and buttons buffers
 		void FlushBuffers();
 
+		// Handles text input from the keyboard
 		void GrabText();
 
     private:
         static void UpdateState(KeyState* data, bool* newState, bool* oldState, uint8_t count);
 
     private:
-        KeyState m_Keys[static_cast<uint8_t>(Key::KEYS_COUNT)];
+		// Storing states of all possible keys
+        KeyState m_Keys[KEYS_COUNT];
+
+		// Storing state of all possible buttons or touches
         KeyState m_Mouse[8];
 
-        bool m_KeyOldState[static_cast<uint8_t>(Key::KEYS_COUNT)];
-        bool m_KeyNewState[static_cast<uint8_t>(Key::KEYS_COUNT)];
+		// Used for storing the old state of the keys, buttons, and touches
+		// so we can distinguish held and pressed states
+
+        bool m_KeyOldState[KEYS_COUNT];
+        bool m_KeyNewState[KEYS_COUNT];
 
         bool m_MouseOldState[8];
         bool m_MouseNewState[8];
 
+		// Storing current mouse position in screen coordinates
         Vector2i m_MousePos;
+
         int m_ScrollDelta;
 
 		bool m_CaptureText;
@@ -124,7 +178,7 @@ namespace def
 		std::string m_CapturedText;
 		size_t m_CapturedTextCursorPos;
 
-		Platform* m_Platform;
+		std::shared_ptr<Platform> m_Platform;
 
     };
 }

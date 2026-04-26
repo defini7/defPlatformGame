@@ -1,9 +1,15 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #include "Pch.hpp"
 #include "Window.hpp"
 
 namespace def
 {
-    Window::Window(Platform* platform) : m_Title("Undefined"), m_Platform(platform)
+    Window::Window(std::shared_ptr<Platform> platform) : m_Title("Undefined"), m_Platform(platform)
     {
     }
 
@@ -28,10 +34,12 @@ namespace def
 
     void Window::UpdateCaption(int fps)
     {
-        if (fps < 0)
-            m_Platform->SetTitle("defini7.github.io - defGameEngine - " + m_Title);
-        else
-            m_Platform->SetTitle("defini7.github.io - defGameEngine - " + m_Title + " - FPS: " + std::to_string(fps));
+        std::string caption = "defini7.github.io - defGameEngine - " + m_Title;
+
+        if (fps >= 0)
+            caption += " - FPS: " + std::to_string(fps);
+
+        m_Platform->SetTitle(caption);
     }
 
     void Window::Flush()
@@ -104,4 +112,15 @@ namespace def
     {
         return m_DropCache;
     }
+
+	void Window::EnableVSync(bool enable)
+	{
+		m_Platform->EnableVSync(enable);
+		m_IsVSync = enable;
+	}
+
+	void Window::EnableFullscreen(bool enable)
+	{
+		m_Platform->EnableFullscreen(enable);
+	}
 }

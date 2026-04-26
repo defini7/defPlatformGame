@@ -1,3 +1,9 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #include "../Include/Game.hpp"
 
 void Initialise()
@@ -32,7 +38,7 @@ int main()
 
 	if (!ScriptsManager::Get().LoadScript("Assets/config.lua"))
 	{
-		logger::Error("Can't load Assets/config.lua file");
+		Logger::Error("Can't load Assets/config.lua file");
 		return 1;
 	}
 
@@ -42,7 +48,7 @@ int main()
 
 	if (!wrappedTableWindow)
 	{
-		logger::Error("Can't find 'Window' table\n");
+		Logger::Error("Can't find 'Window' table\n");
 		return 1;
 	}
 
@@ -54,7 +60,8 @@ int main()
 		windowTable["ScreenWidth"].get_or(256),
 		windowTable["ScreenHeight"].get_or(192),
 		windowTable["PixelWidth"].get_or(4),
-		windowTable["PixelHeight"].get_or(4)
+		windowTable["PixelHeight"].get_or(4),
+		false, true
 	);
 
 	game.Run();

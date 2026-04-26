@@ -1,5 +1,13 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #include "Pch.hpp"
 #include "PlatformGL.hpp"
+
+#define GL_SILENCE_DEPRECATION
 #include "GLFW/glfw3.h"
 
 namespace def
@@ -27,11 +35,11 @@ namespace def
 	void PlatformGL::DrawQuad(const Pixel& tint) const
 	{
 		glBegin(GL_QUADS);
-		glColor4ub(tint.r, tint.g, tint.b, tint.a);
-		glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0f, -1.0f);
-		glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0f, 1.0f);
-		glTexCoord2f(1.0f, 0.0f); glVertex2f(1.0f, 1.0f);
-		glTexCoord2f(1.0f, 1.0f); glVertex2f(1.0f, -1.0f);
+			glColor4ub(tint.r, tint.g, tint.b, tint.a);
+			glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0f, -1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0f, 1.0f);
+			glTexCoord2f(1.0f, 0.0f); glVertex2f(1.0f, 1.0f);
+			glTexCoord2f(1.0f, 1.0f); glVertex2f(1.0f, -1.0f);
 		glEnd();
 	}
 
@@ -65,7 +73,7 @@ namespace def
 	}
 
 	void PlatformGL::Destroy() const {}
-	void PlatformGL::SetTitle(const std::string& text) const {}
+	void PlatformGL::SetTitle(const std::string_view text) const {}
 
 	bool PlatformGL::IsWindowClose() const { return false; }
 	bool PlatformGL::IsWindowFocused() const { return false; }
@@ -74,4 +82,6 @@ namespace def
 
 	bool PlatformGL::ConstructWindow(Vector2i& screenSize, const Vector2i& pixelSize, Vector2i& windowSize, bool vsync, bool fullscreen, bool dirtypixel) { return false; }
 	void PlatformGL::SetIcon(Sprite& icon) const {}
+	void PlatformGL::EnableVSync(bool enable) {}
+	void PlatformGL::EnableFullscreen(bool enable) {}
 }

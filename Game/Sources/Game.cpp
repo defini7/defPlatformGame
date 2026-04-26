@@ -1,3 +1,9 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #define DGE_APPLICATION
 #include "../Include/Game.hpp"
 
@@ -9,7 +15,7 @@ Game& Game::Get()
 
 Game::Game()
 {
-    GetWindow()->SetTitle("Platform Game");
+    Window().SetTitle("Platform Game");
     UseOnlyTextures(true);
 }
 
@@ -55,7 +61,7 @@ void Game::DrawWorld()
     Snow::Get().Draw();
 
     // and here we prepare for drawing the tiles and dynamic objects
-    def::Vector2i visibleTiles = GetWindow()->GetScreenSize() / Assets::Get().tileSize;
+    def::Vector2i visibleTiles = Window().GetScreenSize() / Assets::Get().tileSize;
 
     def::Vector2f offset = (def::Vector2f(m_Player->model.pos.x, m_Player->model.pos.y) - visibleTiles * 0.5f)
         .Max({ 0.0f, 0.0f })
@@ -100,7 +106,7 @@ void Game::State_Menu()
     auto& menu = Menu::Get();
 
     // If we press ESCAPE in the menu we get back to the game
-    if (GetInput()->GetKeyState(def::Key::ESCAPE).pressed)
+    if (Input().GetKeyState(def::Key::ESCAPE).pressed)
     {
         menu.ResetCursor();
         m_State = GameState::Game;
@@ -113,7 +119,7 @@ void Game::State_Menu()
 void Game::State_Game()
 {
     // If we press ESCAPE key we go to the menu
-    if (GetInput()->GetKeyState(def::Key::ESCAPE).pressed)
+    if (Input().GetKeyState(def::Key::ESCAPE).pressed)
         m_State = GameState::Menu;
 
     auto& dynamics = (*m_CurrentLevel)->dynamics;
@@ -149,7 +155,7 @@ bool Game::LoadConfig()
         {
             if (!wrappedTable)
             {
-                logger::Error("Can't load table " + name);
+                Logger::Error("Can't load table " + name);
                 return false;
             }
 

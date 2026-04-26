@@ -1,3 +1,9 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #include "Pch.hpp"
 #include "InputHandler.hpp"
 #include "defGameEngine.hpp"
@@ -154,10 +160,10 @@ namespace def
 
     }
 
-    InputHandler::InputHandler(Platform* platform)
-        : m_MousePos(-1, -1), m_Platform(platform), m_CaptureText(false), m_Caps(false), m_CapturedTextCursorPos(0)
+    InputHandler::InputHandler(std::shared_ptr<Platform> platform)
+        : m_Platform(platform), m_CaptureText(false), m_Caps(false), m_CapturedTextCursorPos(0), m_ScrollDelta(0)
     {
-        uint8_t keysCount = static_cast<uint8_t>(Key::KEYS_COUNT);
+        uint8_t keysCount = static_cast<uint8_t>(KEYS_COUNT);
 
         for (uint8_t i = 0; i < keysCount; i++)
         {
@@ -182,7 +188,7 @@ namespace def
 
     void InputHandler::FlushBuffers()
     {
-        UpdateState(m_Keys, m_KeyNewState, m_KeyOldState, static_cast<uint8_t>(Key::KEYS_COUNT));
+        UpdateState(m_Keys, m_KeyNewState, m_KeyOldState, static_cast<uint8_t>(KEYS_COUNT));
 		UpdateState(m_Mouse, m_MouseNewState, m_MouseOldState, 8);
     }
 

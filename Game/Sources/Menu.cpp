@@ -1,3 +1,9 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #include "../Include/Menu.hpp"
 
 Menu& Menu::Get()
@@ -40,7 +46,7 @@ void Menu::Update()
 
     // Here we move across the menu
 
-    if (game.GetInput()->GetKeyState(def::Key::UP).pressed || game.GetInput()->GetKeyState(def::Key::W).pressed)
+    if (game.Input().GetKeyState(def::Key::UP).pressed || game.Input().GetKeyState(def::Key::W).pressed)
     {
         if (m_Cursor == 0)
             m_Cursor = m_Options.size() - 1;
@@ -48,7 +54,7 @@ void Menu::Update()
             m_Cursor--;
     }
 
-    if (game.GetInput()->GetKeyState(def::Key::DOWN).pressed || game.GetInput()->GetKeyState(def::Key::S).pressed)
+    if (game.Input().GetKeyState(def::Key::DOWN).pressed || game.Input().GetKeyState(def::Key::S).pressed)
     {
         if (m_Cursor >= m_Options.size())
             m_Cursor = 0;
@@ -56,7 +62,7 @@ void Menu::Update()
             m_Cursor++;  
     }
 
-    if (game.GetInput()->GetKeyState(def::Key::ENTER).pressed)
+    if (game.Input().GetKeyState(def::Key::ENTER).pressed)
         m_OptionsActions[m_Cursor]();
 }
 

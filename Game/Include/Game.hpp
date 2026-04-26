@@ -1,5 +1,10 @@
-#ifndef GAME_HPP
-#define GAME_HPP
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
+#pragma once
 
 #include "defGeometry2D.hpp"
 #include "defGameEngine.hpp"
@@ -72,5 +77,3 @@ private:
     Dynamic* m_Player;
 
 };
-
-#endif

@@ -1,3 +1,9 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #include "../Include/Assets.hpp"
 
 Assets& Assets::Get()
@@ -29,7 +35,7 @@ bool Assets::LoadConfig()
         {
             if (!wrappedTable)
             {
-                logger::Error("Can't load table " + name);
+                Logger::Error("Can't load table " + name);
                 return false;
             }
 

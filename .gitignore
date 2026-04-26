@@ -2,4 +2,7 @@ Build/*
 Engine/*.vcxproj*
 Game/*.vcxproj*
 *.sln
+*.slnx
 .vs
+Makefile
+.DS_Store

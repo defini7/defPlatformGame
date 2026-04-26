@@ -1,6 +1,5 @@
 ---@diagnostic disable: undefined-global
 workspace "defPlatformGame"
-    architecture "x64"
     startproject "Game"
 
     configurations
@@ -8,6 +7,12 @@ workspace "defPlatformGame"
         "Debug",
         "Release"
     }
+
+    filter "system:windows or system:linux"
+        architecture "x64"
+
+    filter "system:macosx"
+        architecture "ARM64"
 
 OUTPUT_DIR = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
@@ -36,11 +41,10 @@ project "Engine"
     files
     {
         "%{prj.name}/Include/*.hpp",
-        "%{prj.name}/Sources/*.cpp",
-        "%{prj.name}/Sources/*.inl"
+        "%{prj.name}/Sources/*.cpp"
     }
 
-    filter { "system:windows or system:linux" }
+    filter { "system:windows or system:linux or system:macosx" }
         removefiles
         {
             "%{prj.name}/Include/PlatformEmscripten.hpp",
@@ -62,8 +66,7 @@ project "Engine"
     {
         "%{prj.name}/Vendor/glfw/include",
         "%{prj.name}/Vendor/stb",
-        "%{prj.name}/Include",
-        "%{prj.name}/Sources",
+        "%{prj.name}/Include"
     }
 
     -- Linking with libraries
@@ -77,6 +80,14 @@ project "Engine"
             "GL", "GLU", "glut", "GLEW", "X11",
             "Xxf86vm", "Xrandr", "pthread", "Xi", "dl",
             "Xinerama", "Xcursor"
+        }
+
+    filter "system:macosx"
+        links
+        {
+            "Metal.framework", "QuartzCore.framework",
+            "Cocoa.framework", "OpenGL.framework",
+            "IOKit.framework", "CoreVideo.framework"
         }
 
     -- Platform specific flags
@@ -131,7 +142,11 @@ project "Game"
         "%{prj.name}/Sources/*.cpp"
     }
 
-    removefiles { "Engine/Include/PlatformEmscripten.hpp" }
+    filter { "system:windows or system:linux or system:macosx" }
+        removefiles { "Engine/Include/PlatformEmscripten.hpp" }
+
+    filter "system:emscripten"
+        removefiles { "Engine/Include/PlatformGLFW3.hpp" }
 
     filter {}
 
@@ -161,6 +176,17 @@ project "Game"
             "Xxf86vm", "Xrandr", "pthread", "Xi", "dl",
             "Xinerama", "Xcursor"
         }
+
+    filter "system:macosx"
+        links
+        {
+            "Metal.framework", "QuartzCore.framework",
+            "Cocoa.framework", "OpenGL.framework",
+            "IOKit.framework", "CoreVideo.framework"
+        }
+
+        buildoptions { "-ObjC++" }
+        toolset "clang"
 
     -- Platform specific flags
 

@@ -1,9 +1,14 @@
+/*-----------------------------------------------------------------
+ *  Copyright 2026 defini7. All rights reserved.
+ *  Licensed under the GNU General Public License v3.0.
+ *  See LICENSE file in the project root for license information.
+ *----------------------------------------------------------------*/
+
 #include "../Include/Snow.hpp"
 #include "../Include/Dynamic.hpp"
 
-// Here we just emulate the snow.
 // Everything has been stolen from
-// https://github.com/defini7/defGameEngine/blob/master/Examples/Snow.cpp
+// https://github.com/defGameEngine/Examples/blob/master/Snow.cpp
 
 float GetRandomFloat(float min, float max)
 {
@@ -22,7 +27,7 @@ Snow::Snow()
     for (auto& flake : m_Flakes)
     {
         flake.pos = {
-            GetRandomFloat(0.0f, Game::Get().GetWindow()->GetScreenWidth()), float(-s_FlakeRadius)
+            GetRandomFloat(0.0f, Game::Get().Window().GetScreenWidth()), float(-s_FlakeRadius)
         };
         flake.speed = GetRandomFloat(100.0f, 200.0f);
     }
@@ -45,10 +50,10 @@ void Snow::Update(float deltaTime)
         flake.time += deltaTime;
         flake.pos.y = flake.time * (flake.speed + s_Speed);
 
-        if (flake.pos.y >= Game::Get().GetWindow()->GetScreenHeight() + s_FlakeRadius)
+        if (flake.pos.y >= Game::Get().Window().GetScreenHeight() + s_FlakeRadius)
         {
             flake.pos = {
-                GetRandomFloat(-s_Speed / 10.0f, Game::Get().GetWindow()->GetScreenWidth()),
+                GetRandomFloat(-s_Speed / 10.0f, Game::Get().Window().GetScreenWidth()),
                 float(-s_FlakeRadius)
             };
 
